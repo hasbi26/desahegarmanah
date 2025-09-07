@@ -1,0 +1,55 @@
+# ----------------------
+# CodeIgniter 4 .gitignore
+# ----------------------
+
+# Environment
+.env
+.env.*
+
+# Composer dependencies
+/vendor/
+
+# Node dependencies (kalau pakai npm/yarn)
+node_modules/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Cache
+writable/cache/*
+writable/logs/*
+writable/session/*
+writable/uploads/*
+
+# Jangan ignore index.html di writable (CI4 default)
+!writable/cache/index.html
+!writable/logs/index.html
+!writable/session/index.html
+!writable/uploads/index.html
+
+# PHPUnit
+.phpunit.result.cache
+phpunit.xml
+phpunit.xml.dist
+
+# Coverage
+coverage/
+
+/writable/
+
+
+/db/
+
+# Backup files
+*.bak
+*.tmp
+*.swp
+*.swo
