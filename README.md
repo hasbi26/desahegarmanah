@@ -1,60 +1,140 @@
-# CodeIgniter 4 Framework
+# Aplikasi Pengelolaan Data Penduduk – Desa Hegarmanah
 
-## What is CodeIgniter?
+Dokumentasi ini ditujukan agar klien dan pengguna non-teknis mudah memahami cara memasang dan menggunakan aplikasi.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+## Ringkasan
 
-This repository holds the distributable version of the framework.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+Aplikasi ini membantu pengelolaan data kependudukan di Desa Hegarmanah, termasuk penduduk tetap, penduduk musiman, dan manajemen pengguna (admin/RT).
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## Fitur Utama
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+- **Dashboard**: Ringkasan data cepat.
+- **Kelola Penduduk Tetap**: Lihat, tambah, ubah, hapus data penduduk tetap.
+- **Kelola Penduduk Musiman**: Pencatatan warga musiman (mahasiswa, pekerja, pedagang, dll.).
+- **Manajemen Pengguna (Admin)**: Kelola akun admin dan pengelola RT.
+- **Settings**: Pengaturan aplikasi dasar.
 
-## Important Change with index.php
+## Teknologi
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+- **Framework**: CodeIgniter 4 (PHP)
+- **Database**: MySQL/MariaDB
+- **Server**: Dapat dijalankan dengan Apache (XAMPP) atau CLI (php spark)
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+## Persyaratan Sistem
 
-**Please** read the user guide for a better explanation of how CI4 works!
+- **PHP**: 8.1 atau lebih baru
+- Ekstensi PHP: intl, mbstring, json (default), mysqlnd, libcurl (jika pakai HTTP client)
+- **Composer**: untuk mengunduh dependensi PHP
+- **MySQL/MariaDB**: untuk basis data
 
-## Repository Management
+## Instalasi Cepat (Windows/XAMPP)
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+1. **Clone/ekstrak proyek** ke folder XAMPP, contoh:
+   - `c:\xampp\htdocs\desa-hegarmanah\desahegarmanah`
+2. **Install dependensi**
+   ```bash
+   composer install
+   ```
+3. **Salin dan setel environment**
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+   - Salin file `env` menjadi `.env`
+   - Buka `.env`, aktifkan dan isi bagian App & Database:
 
-## Contributing
+   ```ini
+   app.baseURL = 'http://localhost:8080/'
 
-We welcome contributions from the community.
+   database.default.hostname = localhost
+   database.default.database = nama_database_anda
+   database.default.username = root
+   database.default.password =
+   database.default.DBDriver = MySQLi
+   database.default.DBPrefix =
+   ```
 
-Please read the [*Contributing to CodeIgniter*](https://github.com/codeigniter4/CodeIgniter4/blob/develop/CONTRIBUTING.md) section in the development repository.
+4. **Buat database** di MySQL sesuai nama di `.env` (misal `desa_hegarmanah`).
+5. **Jalankan migrasi database**
+   ```bash
+   php spark migrate
+   ```
+6. **(Opsional) Seed data referensi**
+   - Untuk data desa contoh:
+   ```bash
+   php spark db:seed DesaSeeder
+   ```
+7. **Buat akun admin pertama** (wajib, untuk login awal)
+   - Karena halaman pengguna hanya bisa diakses setelah login admin, buat akun admin langsung di database (sementara). Sistem mendukung password plaintext dan akan otomatis meng-upgrade ke hash yang aman saat login pertama.
+   - Jalankan SQL ini di database Anda:
+   ```sql
+   INSERT INTO user (username, email, password, role, rt_id, is_active)
+   VALUES ('admin', 'admin@example.com', 'admin123', 1, NULL, 1);
+   ```
+   - Username: `admin`, Password: `admin123`
+   - Setelah berhasil login pertama kali, password akan diubah otomatis menjadi format yang aman (hash) oleh sistem.
 
-## Server Requirements
+## Menjalankan Aplikasi
 
-PHP version 8.1 or higher is required, with the following extensions installed:
+- **Cara 1 (disarankan untuk pengembangan)**: Jalankan server bawaan CI4
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+  ```bash
+  php spark serve
+  ```
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> - The end of life date for PHP 8.1 will be December 31, 2025.
+  Akses di browser: `http://localhost:8080`
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+- **Cara 2 (Apache XAMPP)**: Atur DocumentRoot ke folder `public` proyek ini:
+  - Contoh: `c:\xampp\htdocs\desa-hegarmanah\desahegarmanah\public`
+  - Akses melalui: `http://localhost/desahegarmanah` (tergantung konfigurasi VirtualHost/Alias Anda)
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+## Akun & Peran
+
+- **Admin (role = 1)**
+  - Akses penuh, termasuk menu "Pengguna" untuk menambah/ubah/hapus akun.
+- **Pengelola RT (role = 2)**
+  - Akses terbatas untuk pengelolaan data sesuai RT yang ditetapkan.
+
+Catatan: Sidebar menampilkan menu "Pengguna" hanya untuk Admin.
+
+## Alur Penggunaan Singkat
+
+1. Login sebagai Admin.
+2. Tambahkan data RT (jika belum ada) dan/atau data penduduk.
+3. Tambahkan akun Pengelola RT melalui menu Pengguna (tetapkan RT yang dikelola).
+4. Gunakan menu "Penduduk" dan "Musiman" sesuai kebutuhan operasional.
+
+## Struktur Data (ringkas)
+
+Migrasi utama mencakup tabel-tabel:
+
+- `penduduk_new` (data inti penduduk)
+- `penduduk_mutasi` (kelahiran, pendatang, kematian, pindah)
+- `penduduk_tinggal` (kaitan penduduk dengan RT dan info tempat tinggal)
+- `rumah_tangga` (fasilitas rumah tangga)
+- `musiman` (ditambah beberapa kolom detail)
+- `desa`, `rts`, dan penyesuaian `user` (kolom `rt_id`)
+
+Saat migrasi, data lama (jika ada) dipindahkan ke struktur baru secara otomatis.
+
+## Upload/Cache/Log
+
+- Folder `writable/` digunakan untuk cache, logs, sesi, dan unggahan. Folder ini tidak ikut ke Git.
+- Pastikan folder `writable/` dapat ditulis oleh PHP (di Windows biasanya sudah cukup).
+
+## Troubleshooting
+
+- **Halaman tidak muncul / 404**: Pastikan server mengarah ke folder `public`.
+- **Gagal koneksi database**: Periksa kredensial pada `.env` dan pastikan DB dibuat.
+- **Migrasi gagal**: Pastikan versi PHP sesuai dan jalankan `php spark migrate` dari root proyek yang berisi file `spark`.
+- **Tidak bisa login**: Pastikan Anda sudah membuat akun admin via SQL seperti contoh di atas.
+
+## Keamanan
+
+- Setelah instalasi, ubah password admin bawaan melalui menu Pengguna.
+- Simpan file `.env` hanya di server, jangan dibagikan. File ini sudah diabaikan oleh Git.
+
+## Lisensi
+
+Mengacu pada lisensi yang tercantum pada file `LICENSE` di proyek ini (CodeIgniter 4 dan komponen terkait).
+
+---
+
+Jika membutuhkan bantuan instalasi atau pelatihan penggunaan aplikasi, silakan hubungi tim pengembang.

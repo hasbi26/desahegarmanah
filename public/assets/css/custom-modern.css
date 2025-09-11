@@ -1,0 +1,85 @@
+/* Shared modern styles for list/detail cards and controls */
+.list-card {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.list-card .card-header {
+  background: #fff;
+  border-bottom: 0;
+}
+.list-card .card-body {
+  padding: 16px;
+}
+
+.detail-card {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.detail-card .card-header {
+  background: #fff;
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+.btn-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.btn-icon i {
+  font-size: 16px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+.search-input {
+  padding-left: 34px;
+}
+
+.table thead th {
+  white-space: nowrap;
+}
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Simple page header card */
+.page-header-card {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.page-header-card .card-body {
+  padding: 16px 18px;
+}
+.page-header-card h5 {
+  margin: 0 0 4px 0;
+}
+.page-header-card small {
+  color: #6b7280;
+}
+
+/* Sidebar modern + active state */
+.sidebar-nav a { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: #111827; text-decoration: none; }
+.sidebar-nav a .icon { display:flex; align-items:center; justify-content:center; width: 28px; height: 28px; border-radius: 8px; background: #f3f4f6; color: #6b7280; }
+.sidebar-nav a.active { background: #eef2ff; color: #1d4ed8; font-weight: 600; }
+.sidebar-nav a.active .icon { background: #dbeafe; color: #1d4ed8; }
+.sidebar-nav .nav-item + .nav-item a { margin-top: 4px; }

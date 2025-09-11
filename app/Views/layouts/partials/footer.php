@@ -7,7 +7,7 @@
                   <!-- Designed and Developed by
                   <a href="https://plainadmin.com" rel="nofollow" target="_blank">
                     PlainAdmin -->
-                    Desa Jatimulya
+                    Desa Hegarmanah
                   </a>
                 </p>
               </div>
