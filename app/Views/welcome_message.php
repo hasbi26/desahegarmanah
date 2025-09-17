@@ -251,6 +251,19 @@
 
 </section>
 
+<section>
+    <h1>AJAX API examples</h1>
+    <p>Click the buttons to call the new API endpoints under <code>/api/</code>.</p>
+
+    <div>
+        <button id="btnEnumerators">Get Enumerators (GET)</button>
+        <button id="btnPenduduk">Get Penduduk ID 1 (GET)</button>
+        <button id="btnEcho">Post Echo (POST)</button>
+    </div>
+
+    <pre id="apiResult" style="background:#f7f7f7;border:1px solid #ddd;padding:1rem;white-space:pre-wrap;"></pre>
+</section>
+
 <div class="further">
 
     <section>
@@ -324,6 +337,41 @@
         }
     }
 </script>
+
+<!-- jQuery + API helper -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJ+Y3r6w5Q6i5E6v4x3oSm3Y3V/1m7f6D8N3w=" crossorigin="anonymous"></script>
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/api.service.js"></script>
+<script src="/assets/js/enumerator.component.js"></script>
+<script>
+    (function () {
+        var out = document.getElementById('apiResult');
+        document.getElementById('btnEnumerators').addEventListener('click', function () {
+            API.enumeratorList({}, function (res) { out.textContent = JSON.stringify(res, null, 2); }, function (err) { out.textContent = err.responseText || JSON.stringify(err); });
+        });
+
+        document.getElementById('btnPenduduk').addEventListener('click', function () {
+            API.getPenduduk(1, function (res) { out.textContent = JSON.stringify(res, null, 2); }, function (err) { out.textContent = err.responseText || JSON.stringify(err); });
+        });
+
+        document.getElementById('btnEcho').addEventListener('click', function () {
+            var payload = { message: 'Hello from front-end', ts: Date.now() };
+            API.postEcho(payload, function (res) { out.textContent = JSON.stringify(res, null, 2); }, function (err) { out.textContent = err.responseText || JSON.stringify(err); });
+        });
+    })();
+</script>
+
+    <script>
+        // Small area for the enumerator component
+        (function () {
+            var container = document.createElement('div');
+            container.id = 'enumeratorArea';
+            container.style.margin = '1rem 1.75rem';
+            document.body.insertBefore(container, document.querySelector('.further'));
+            // Initialize component
+            EnumeratorComponent.init('#enumeratorArea');
+        })();
+    </script>
 
 <!-- -->
 
