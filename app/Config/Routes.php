@@ -58,6 +58,31 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('kuesioner/create', 'KuesionerController::create');
 
     $routes->post('survey/simpan', 'SurveyController::simpanDataSurvey');
+
+    // API routes (JSON)
+    $routes->group('api', ['filter' => 'auth'], static function ($routes) {
+        // Penduduk
+        $routes->get('penduduk', 'Api\Penduduk::index');
+        $routes->get('penduduk/(:num)', 'Api\Penduduk::show/$1');
+        $routes->post('penduduk', 'Api\Penduduk::create');
+        $routes->put('penduduk/(:num)', 'Api\Penduduk::update/$1');
+        $routes->delete('penduduk/(:num)', 'Api\Penduduk::delete/$1');
+
+        // Musiman
+        $routes->get('musiman', 'Api\Musiman::index');
+        $routes->get('musiman/(:num)', 'Api\Musiman::show/$1');
+        $routes->post('musiman', 'Api\Musiman::create');
+        $routes->put('musiman/(:num)', 'Api\Musiman::update/$1');
+        $routes->delete('musiman/(:num)', 'Api\Musiman::delete/$1');
+
+        // Enumerator
+        $routes->get('enumerator', 'Api\Enumerator::index');
+        $routes->get('enumerator/(:num)', 'Api\Enumerator::show/$1');
+        $routes->post('enumerator', 'Api\Enumerator::create');
+        $routes->put('enumerator/(:num)', 'Api\Enumerator::update/$1');
+        $routes->delete('enumerator/(:num)', 'Api\Enumerator::delete/$1');
+        $routes->get('enumerator/options', 'Api\Enumerator::options');
+    });
 });
 
 // Public API routes for AJAX (adjust filter if you want them protected)
