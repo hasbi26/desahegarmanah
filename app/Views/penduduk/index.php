@@ -72,6 +72,19 @@
             </div>
         </div>
         <div class="card-body">
+            <?php if (session('success')): ?>
+                <div class="alert alert-success"><?= esc(session('success')) ?></div>
+            <?php endif; ?>
+            <?php if (session('error')): ?>
+                <div class="alert alert-danger"><?= esc(session('error')) ?></div>
+            <?php endif; ?>
+            <?php if (session('errors')): ?>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        <?php foreach (session('errors') as $e): ?><li><?= esc($e) ?></li><?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <form class="row g-2 mb-3" method="get">
                 <div class="col-md-6 position-relative">
                     <i class="lni lni-search search-icon"></i>
@@ -107,13 +120,13 @@
                                     <td><?= esc($i['rt_id']) ?></td>
                                     <td>
                                         <div class="actions">
-                                            <a href="<?= base_url('penduduk/' . $i['id']) ?>" class="btn btn-outline-secondary btn-icon" title="Lihat">
+                                            <a href="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id'])) ?>" class="btn btn-outline-secondary btn-icon" title="Lihat">
                                                 <i class="lni lni-eye"></i>
                                             </a>
-                                            <a href="<?= base_url('penduduk/' . $i['id'] . '/edit') ?>" class="btn btn-warning btn-icon" title="Edit">
+                                            <a href="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id']) . '/edit') ?>" class="btn btn-warning btn-icon" title="Edit">
                                                 <i class="lni lni-pencil"></i>
                                             </a>
-                                            <form action="<?= base_url('penduduk/' . $i['id'] . '/delete') ?>" method="post" onsubmit="return confirm('Hapus data ini?')" style="display:inline">
+                                            <form action="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id']) . '/delete') ?>" method="post" onsubmit="return confirm('Hapus data ini?')" style="display:inline">
                                                 <button class="btn btn-danger btn-icon" type="submit" title="Hapus">
                                                     <i class="lni lni-trash-can"></i>
                                                 </button>

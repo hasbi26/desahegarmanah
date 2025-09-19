@@ -23,7 +23,10 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('penduduk', 'PendudukController::store');
     $routes->get('penduduk/(:num)', 'PendudukController::show/$1');
     $routes->get('penduduk/(:num)/edit', 'PendudukController::edit/$1');
+    // Terima POST (lama) dan juga PUT/PATCH (method spoofing) untuk update
     $routes->post('penduduk/(:num)/update', 'PendudukController::update/$1');
+    $routes->put('penduduk/(:num)/update', 'PendudukController::update/$1');
+    $routes->patch('penduduk/(:num)/update', 'PendudukController::update/$1');
     $routes->post('penduduk/(:num)/delete', 'PendudukController::delete/$1');
     $routes->get('penduduk/export/pdf', 'PendudukController::exportPdf');
     $routes->get('penduduk/export/excel', 'PendudukController::exportExcel');

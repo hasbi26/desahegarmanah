@@ -101,7 +101,8 @@ class PendudukController extends BaseController
         $offset = ($page - 1) * $perPage;
 
         // Join penduduk inti + tinggal untuk kebutuhan listing (rt_id dan alamat)
-        $builder = $this->pendudukIntiModel->select('penduduk_new.*, penduduk_tinggal.rt_id')
+        // Alias-kan ID agar tidak tertukar dengan kemungkinan kolom id dari tabel lain pada join tambahan
+        $builder = $this->pendudukIntiModel->select('penduduk_new.id AS penduduk_id, penduduk_new.nik, penduduk_new.nama_lengkap, penduduk_new.jenis_kelamin, penduduk_new.alamat, penduduk_new.updated_at, penduduk_tinggal.rt_id')
             ->join('penduduk_tinggal', 'penduduk_tinggal.penduduk_id = penduduk_new.id', 'left');
         $this->restrictBuilderByRole($builder);
         if ($q) {
@@ -287,8 +288,8 @@ class PendudukController extends BaseController
             'title' => 'Edit Penduduk',
             'rtOptions' => $rtOptions,
             'currentRt' => $currentRt,
-            // Pastikan ID penduduk tidak tertimpa oleh kolom id dari tabel relasi
-            'item' => array_merge($inti, ['penduduk_id' => $id], $tinggal, $mutasi, $rumah),
+            // Pastikan ID penduduk tidak tertimpa: gunakan penduduk_id sebagai otoritatif dan set id=$id di akhir
+            'item' => array_merge($tinggal, $mutasi, $rumah, $inti, ['penduduk_id' => $id, 'id' => $id]),
             'role' => session()->get('role'),
             'wilayah_nama' => session()->get('wilayah_nama'),
         ]);

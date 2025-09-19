@@ -26,6 +26,10 @@
         <div class="card-body">
             <form method="post" action="<?= isset($item) ? base_url('penduduk/' . ($item['id'] ?? $item['penduduk_id'] ?? '') . '/update') : base_url('penduduk') ?>">
                 <?= csrf_field() ?>
+                <?php if (isset($item)): ?>
+                    <!-- Pakai method spoofing agar controller menerima sebagai PUT -->
+                    <input type="hidden" name="_method" value="PUT">
+                <?php endif; ?>
                 <?php $hid = $item['id'] ?? $item['penduduk_id'] ?? null; ?>
                 <?php if (!empty($hid)): ?>
                     <!-- Hidden id yang pasti mengacu ke penduduk_new.id -->
