@@ -1,56 +1,64 @@
-# ----------------------
-# CodeIgniter 4 .gitignore
-# ----------------------
+# # ----------------------
+# # CodeIgniter 4 .gitignore
+# # ----------------------
 
-# Environment
-.env
-.env.*
+# # Environment
+# .env
+# .env.*
 
-# Composer dependencies
-/vendor/
+# # Composer dependencies
+# /vendor/
 
-# Node dependencies (kalau pakai npm/yarn)
-node_modules/
+# # Node dependencies (kalau pakai npm/yarn)
+# node_modules/
 
-# IDE / Editor
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
+# # IDE / Editor
+# .vscode/
+# .idea/
+# *.sublime-project
+# *.sublime-workspace
 
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
+# # OS files
+# .DS_Store
+# Thumbs.db
+# desktop.ini
 
-# Logs & Cache
-writable/cache/*
-writable/logs/*
-writable/session/*
-writable/uploads/*
+# # Logs & Cache
+# writable/cache/*
+# writable/logs/*
+# writable/session/*
+# writable/uploads/*
 
-# Jangan ignore index.html di writable (CI4 default)
-!writable/cache/index.html
-!writable/logs/index.html
-!writable/session/index.html
-!writable/uploads/index.html
+# # Jangan ignore index.html di writable (CI4 default)
+# !writable/cache/index.html
+# !writable/logs/index.html
+# !writable/session/index.html
+# !writable/uploads/index.html
 
-# PHPUnit
-.phpunit.result.cache
-phpunit.xml
-phpunit.xml.dist
+# # PHPUnit
+# .phpunit.result.cache
+# phpunit.xml
+# phpunit.xml.dist
 
-# Coverage
-coverage/
+# # Coverage
+# coverage/
 
-/writable/
+# /writable/
 
 
-/db/
+# /db/
 
+<<<<<<< HEAD
 # Backup files
 *.bak
 *.tmp
 *.swp
 *.swo
 .qodo
+=======
+# # Backup files
+# *.bak
+# *.tmp
+# *.swp
+# *.swo
+>>>>>>> 2fa1affd4ca19c27989765d9af3c383cfc0d1c80

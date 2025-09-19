@@ -19,11 +19,39 @@ class UserModel extends Model
      */
     public function getUserByUsernameAndRole(string $username)
     {
-        $builder = $this->db->table('user u')
-            ->where('u.username', $username);
+        $table = $this->table;
+        $db = $this->db;
 
-        $builder->select('u.id as user_id, u.username, u.password, u.role, u.email, u.role_id, u.rt_id, u.is_active, d.nama as wilayah_nama, d.id as desa_id, d.kecamatan_id')
-            ->join('desa d', 'd.id = u.role_id', 'left');
+        // If table missing, return null and let caller fallback
+        if (! $db->tableExists($table)) {
+            return null;
+        }
+
+        // Determine which columns actually exist to avoid "Unknown column" errors
+        try {
+            $fields = $db->getFieldNames($table);
+        } catch (\Throwable $e) {
+            // if we cannot get fields, fallback to safe minimal select
+            $fields = [];
+        }
+
+        $selectParts = ['u.id as user_id', 'u.username', 'u.password', 'u.role', 'u.email', 'u.is_active'];
+        if (in_array('role_id', $fields)) {
+            $selectParts[] = 'u.role_id';
+        }
+        if (in_array('rt_id', $fields)) {
+            $selectParts[] = 'u.rt_id';
+        }
+
+        $builder = $db->table($table . ' u')
+            ->where('u.username', $username)
+            ->select(implode(', ', $selectParts));
+
+        // Only join `desa` when role_id exists and desa table exists
+        if (in_array('role_id', $fields) && $db->tableExists('desa')) {
+            $builder->select('d.nama as wilayah_nama, d.id as desa_id, d.kecamatan_id')
+                ->join('desa d', 'd.id = u.role_id', 'left');
+        }
 
         return $builder->get()->getRowArray();
     }

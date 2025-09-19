@@ -10,4 +10,6 @@ class EnumeratorModel extends Model
     protected $allowedFields = ['nama', 'alamat', 'hp_telepon'];
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
+    protected $returnType = 'array';
 }

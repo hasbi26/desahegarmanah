@@ -61,6 +61,66 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('kuesioner/create', 'KuesionerController::create');
 
     $routes->post('survey/simpan', 'SurveyController::simpanDataSurvey');
+
+    // API routes (JSON)
+    $routes->group('api', ['filter' => 'auth'], static function ($routes) {
+        // Penduduk
+        $routes->get('penduduk', 'Api\Penduduk::index');
+        $routes->get('penduduk/(:num)', 'Api\Penduduk::show/$1');
+        $routes->post('penduduk', 'Api\Penduduk::create');
+        $routes->put('penduduk/(:num)', 'Api\Penduduk::update/$1');
+        $routes->delete('penduduk/(:num)', 'Api\Penduduk::delete/$1');
+
+        // Musiman
+        $routes->get('musiman', 'Api\Musiman::index');
+        $routes->get('musiman/(:num)', 'Api\Musiman::show/$1');
+        $routes->post('musiman', 'Api\Musiman::create');
+        $routes->put('musiman/(:num)', 'Api\Musiman::update/$1');
+        $routes->delete('musiman/(:num)', 'Api\Musiman::delete/$1');
+
+        // Enumerator
+        $routes->get('enumerator', 'Api\Enumerator::index');
+        $routes->get('enumerator/(:num)', 'Api\Enumerator::show/$1');
+        $routes->post('enumerator', 'Api\Enumerator::create');
+        $routes->put('enumerator/(:num)', 'Api\Enumerator::update/$1');
+        $routes->delete('enumerator/(:num)', 'Api\Enumerator::delete/$1');
+        $routes->get('enumerator/options', 'Api\Enumerator::options');
+    });
+});
+
+// Public API routes for AJAX (adjust filter if you want them protected)
+$routes->group('api', static function ($routes) {
+    $routes->get('enumerators', 'API\Api::enumerators');
+    $routes->get('penduduk/(:num)', 'API\Api::penduduk/$1');
+    $routes->post('echo', 'API\Api::echo');
+    // Resource-style routes for newly added API controllers
+    // Penduduk
+    $routes->get('penduduk', 'API\Penduduk::index');
+    $routes->get('penduduk/(:num)', 'API\Penduduk::show/$1');
+    $routes->post('penduduk', 'API\Penduduk::store');
+    $routes->put('penduduk/(:num)', 'API\Penduduk::update/$1');
+    $routes->delete('penduduk/(:num)', 'API\Penduduk::delete/$1');
+
+    // Enumerator
+    $routes->get('enumerator', 'API\Enumerator::index');
+    $routes->get('enumerator/(:num)', 'API\Enumerator::show/$1');
+    $routes->post('enumerator', 'API\Enumerator::store');
+    $routes->post('enumerator/(:num)/update', 'API\Enumerator::update/$1');
+    $routes->delete('enumerator/(:num)', 'API\Enumerator::delete/$1');
+
+    // Musiman
+    $routes->get('musiman', 'API\Musiman::index');
+    $routes->get('musiman/(:num)', 'API\Musiman::show/$1');
+    $routes->post('musiman', 'API\Musiman::store');
+    $routes->put('musiman/(:num)', 'API\Musiman::update/$1');
+    $routes->delete('musiman/(:num)', 'API\Musiman::delete/$1');
+
+    // Users
+    $routes->get('users', 'API\Users::index');
+    $routes->get('users/(:num)', 'API\Users::show/$1');
+    $routes->post('users', 'API\Users::store');
+    $routes->put('users/(:num)', 'API\Users::update/$1');
+    $routes->delete('users/(:num)', 'API\Users::delete/$1');
 });
 
 // REST API routes
