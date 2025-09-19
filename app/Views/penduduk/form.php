@@ -24,7 +24,13 @@
     <div class="card detail-card">
         <div class="card-header"><i class="lni lni-form me-1"></i> Input Data</div>
         <div class="card-body">
-            <form method="post" action="<?= isset($item) ? base_url('penduduk/' . $item['id'] . '/update') : base_url('penduduk') ?>">
+            <form method="post" action="<?= isset($item) ? base_url('penduduk/' . ($item['id'] ?? $item['penduduk_id'] ?? '') . '/update') : base_url('penduduk') ?>">
+                <?= csrf_field() ?>
+                <?php $hid = $item['id'] ?? $item['penduduk_id'] ?? null; ?>
+                <?php if (!empty($hid)): ?>
+                    <!-- Hidden id yang pasti mengacu ke penduduk_new.id -->
+                    <input type="hidden" name="id" value="<?= (int)$hid ?>">
+                <?php endif; ?>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Nama Lengkap</label>
@@ -49,28 +55,48 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Jenis Kelamin</label>
+                        <?php $jkVal = old('jenis_kelamin', $item['jenis_kelamin'] ?? ''); ?>
                         <select name="jenis_kelamin" class="form-select" required>
                             <option value="">- pilih -</option>
-                            <option value="L" <?= (isset($item['jenis_kelamin']) && $item['jenis_kelamin'] == 'L') ? 'selected' : '' ?>>Laki-laki</option>
-                            <option value="P" <?= (isset($item['jenis_kelamin']) && $item['jenis_kelamin'] == 'P') ? 'selected' : '' ?>>Perempuan</option>
+                            <option value="L" <?= $jkVal === 'L' ? 'selected' : '' ?>>Laki-laki</option>
+                            <option value="P" <?= $jkVal === 'P' ? 'selected' : '' ?>>Perempuan</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">RT</label>
-                        <?php if ((int)($role ?? 0) === 2): ?>
-                            <input type="hidden" name="rt_id" value="<?= esc(session('rt_id')) ?>">
-                            <input class="form-control" value="<?= esc(session('rt_id')) ?>" readonly>
+                        <?php if (!empty($currentRt)): ?>
+                            <?php
+                                // Label tampil untuk role RT (read-only), kirim id lewat hidden input
+                                $rtCode   = strtoupper((string)($currentRt['rt'] ?? ''));
+                                $rtDigits = preg_replace('/\D+/', '', $rtCode);
+                                $rtLabel  = 'RT' . str_pad($rtDigits !== '' ? $rtDigits : $rtCode, 2, '0', STR_PAD_LEFT);
+                                $rwCode   = strtoupper((string)($currentRt['rw'] ?? ''));
+                                $rwDigits = preg_replace('/\D+/', '', $rwCode);
+                                $rwLabel  = $rwDigits !== '' ? ('/RW' . str_pad($rwDigits, 2, '0', STR_PAD_LEFT)) : '';
+                                $label    = $rtLabel . $rwLabel;
+                            ?>
+                            <input type="hidden" name="rt_id" value="<?= (int)($currentRt['id'] ?? 0) ?>">
+                            <input class="form-control" value="<?= esc($label) ?>" readonly>
+                        <?php elseif (!empty($rtOptions)): ?>
+                            <?php $selectedRtId = old('rt_id', $item['rt_id'] ?? session('rt_id')); ?>
+                            <select name="rt_id" class="form-select" required>
+                                <option value="">- pilih -</option>
+                                <?php foreach ($rtOptions as $rt): ?>
+                                    <?php
+                                        // Build label like RT01/RW10 regardless of stored format
+                                        $rtCode   = strtoupper((string)($rt['rt'] ?? ''));
+                                        $rtDigits = preg_replace('/\D+/', '', $rtCode);
+                                        $rtLabel  = 'RT' . str_pad($rtDigits !== '' ? $rtDigits : $rtCode, 2, '0', STR_PAD_LEFT);
+                                        $rwCode   = strtoupper((string)($rt['rw'] ?? ''));
+                                        $rwDigits = preg_replace('/\D+/', '', $rwCode);
+                                        $rwLabel  = $rwDigits !== '' ? ('/RW' . str_pad($rwDigits, 2, '0', STR_PAD_LEFT)) : '';
+                                        $label    = $rtLabel . $rwLabel;
+                                    ?>
+                                    <option value="<?= $rt['id'] ?>" <?= ($selectedRtId == $rt['id']) ? 'selected' : '' ?>><?= esc($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         <?php else: ?>
-                            <?php if (!empty($rtOptions)): ?>
-                                <select name="rt_id" class="form-select" required>
-                                    <option value="">- pilih -</option>
-                                    <?php foreach ($rtOptions as $rt): ?>
-                                        <option value="<?= $rt['id'] ?>" <?= (isset($item['rt_id']) && $item['rt_id'] == $rt['id']) ? 'selected' : '' ?>>RT <?= esc($rt['rt']) ?>/RW <?= esc($rt['rw']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            <?php else: ?>
-                                <div class="alert alert-warning mb-0">Data RT belum tersedia. Tambahkan data RT terlebih dahulu.</div>
-                            <?php endif; ?>
+                            <div class="alert alert-warning mb-0">Data RT belum tersedia. Tambahkan data RT terlebih dahulu.</div>
                         <?php endif; ?>
                     </div>
 

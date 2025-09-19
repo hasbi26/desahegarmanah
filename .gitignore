@@ -53,3 +53,4 @@ coverage/
 *.tmp
 *.swp
 *.swo
+.qodo

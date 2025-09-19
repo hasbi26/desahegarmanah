@@ -6,7 +6,8 @@ use CodeIgniter\Model;
 
 class PendudukModel extends Model
 {
-    protected $table = 'penduduk';
+    // Legacy model: point to normalized table to avoid accidental updates to old table
+    protected $table = 'penduduk_new';
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'nama_lengkap',

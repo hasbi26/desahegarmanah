@@ -59,3 +59,40 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
     $routes->post('survey/simpan', 'SurveyController::simpanDataSurvey');
 });
+
+// REST API routes
+$routes->group('api', static function ($routes) {
+    // Akses Kesehatan CRUD
+    $routes->get('akses-kesehatan', 'Api\AksesKesehatanController::index');
+    $routes->get('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::show/$1');
+    $routes->post('akses-kesehatan', 'Api\AksesKesehatanController::create');
+    $routes->put('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::update/$1');
+    $routes->patch('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::update/$1');
+    $routes->delete('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::delete/$1');
+
+    // Penduduk Tetap (penduduk_new + penduduk_tinggal)
+    $routes->get('penduduk-tetap', 'Api\PendudukTetapController::index');
+    $routes->get('penduduk-tetap/search', 'Api\PendudukTetapController::search');
+    $routes->get('penduduk-tetap/(:num)', 'Api\PendudukTetapController::show/$1');
+    $routes->post('penduduk-tetap', 'Api\PendudukTetapController::create');
+    $routes->put('penduduk-tetap/(:num)', 'Api\PendudukTetapController::update/$1');
+    $routes->patch('penduduk-tetap/(:num)', 'Api\PendudukTetapController::update/$1');
+    $routes->delete('penduduk-tetap/(:num)', 'Api\PendudukTetapController::delete/$1');
+
+    // Penduduk Musiman
+    $routes->get('penduduk-musiman', 'Api\PendudukMusimanController::index');
+    $routes->get('penduduk-musiman/(:num)', 'Api\PendudukMusimanController::show/$1');
+    $routes->post('penduduk-musiman', 'Api\PendudukMusimanController::create');
+    // Update fleksibel: bisa tanpa ID di URL
+    $routes->put('penduduk-musiman/(:num)', 'Api\PendudukMusimanController::update/$1');
+    $routes->patch('penduduk-musiman/(:num)', 'Api\PendudukMusimanController::update/$1');
+    $routes->post('penduduk-musiman/save', 'Api\PendudukMusimanController::save');
+    $routes->put('penduduk-musiman', 'Api\PendudukMusimanController::update');
+    $routes->patch('penduduk-musiman', 'Api\PendudukMusimanController::update');
+    $routes->delete('penduduk-musiman/(:num)', 'Api\PendudukMusimanController::delete/$1');
+
+    // Dashboard data
+    $routes->get('dashboard/summary', 'Api\DashboardController::summary');
+    $routes->get('dashboard/distribusi-rt', 'Api\DashboardController::distribusiPerRT');
+    $routes->get('dashboard/komposisi-jenis-kelamin', 'Api\DashboardController::komposisiJenisKelamin');
+});

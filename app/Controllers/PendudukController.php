@@ -40,9 +40,60 @@ class PendudukController extends BaseController
         return $builder;
     }
 
+    /**
+     * Pastikan rt_id ada di sesi untuk role=2. Jika kosong, ambil dari tabel user.
+     */
+    private function ensureRtIdInSession(): void
+    {
+        $role = (int) $this->session->get('role');
+        if ($role !== 2) return;
+        if ($this->session->get('rt_id')) return;
+
+        $userId = $this->session->get('user_id');
+        if (!$userId) return;
+        try {
+            $db = db_connect();
+            $row = $db->table('user')->select('rt_id')->where('id', $userId)->get()->getRowArray();
+            if ($row && !empty($row['rt_id'])) {
+                $this->session->set('rt_id', (int) $row['rt_id']);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'ensureRtIdInSession failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Pastikan data RT dasar tersedia (RT01, RT10).
+     */
+    private function ensureRtSeeds(): void
+    {
+        try {
+            $existing = $this->rtModel
+                ->select('rt')
+                ->whereIn('rt', ['RT01', '01', 'RT10', '10'])
+                ->findAll();
+            $have = array_map(static function ($r) {
+                return strtoupper($r['rt']);
+            }, $existing ?? []);
+            $toInsert = [];
+            if (!in_array('RT01', $have, true) && !in_array('01', $have, true)) {
+                $toInsert[] = ['rt' => 'RT01'];
+            }
+            if (!in_array('RT10', $have, true) && !in_array('10', $have, true)) {
+                $toInsert[] = ['rt' => 'RT10'];
+            }
+            if (!empty($toInsert)) {
+                $this->rtModel->insertBatch($toInsert);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'ensureRtSeeds failed: ' . $e->getMessage());
+        }
+    }
+
     public function index()
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
 
         $q = $this->request->getGet('q');
         $page = max(1, (int) $this->request->getGet('page'));
@@ -81,11 +132,26 @@ class PendudukController extends BaseController
     public function create()
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         $role = (int) $this->session->get('role');
-        $rtOptions = ($role === 2) ? [] : $this->rtModel->orderBy('rt', 'ASC')->findAll();
+        $sessionRtId = $this->session->get('rt_id');
+
+        // Ambil opsi RT sesuai peran; untuk RT (role=2) dengan rt_id di sesi, tidak perlu dropdown
+        $rtOptions = [];
+        $currentRt = null;
+        if ($role === 2 && !empty($sessionRtId)) {
+            $currentRt = $this->rtModel->find((int) $sessionRtId);
+        } else {
+            $rtOptions = $this->rtModel
+                ->orderBy('rt', 'ASC')
+                ->orderBy('rw', 'ASC')
+                ->findAll();
+        }
+
         return view('penduduk/form', [
             'title' => 'Tambah Penduduk',
             'rtOptions' => $rtOptions,
+            'currentRt' => $currentRt,
             'item' => null,
             'role' => session()->get('role'),
             'wilayah_nama' => session()->get('wilayah_nama'),
@@ -115,7 +181,19 @@ class PendudukController extends BaseController
 
         $role = (int) $this->session->get('role');
         if ($role === 2) {
-            $tinggal['rt_id'] = $this->session->get('rt_id');
+            $this->ensureRtIdInSession();
+            $rtId = $this->session->get('rt_id');
+            if ($rtId) {
+                // Jika sesi memiliki rt_id, pakai itu (abaikan input form)
+                $tinggal['rt_id'] = (int) $rtId;
+            } else {
+                // Sesi kosong: izinkan pilih dari dropdown (RT01/RT10)
+                // Pastikan nilai dari form ada dan integer
+                if (empty($tinggal['rt_id']) || !is_numeric($tinggal['rt_id'])) {
+                    return redirect()->back()->withInput()->with('errors', ['rt_id' => 'Silakan pilih RT']);
+                }
+                $tinggal['rt_id'] = (int) $tinggal['rt_id'];
+            }
         }
 
         // Normalisasi checkbox
@@ -127,23 +205,44 @@ class PendudukController extends BaseController
             'nama_lengkap' => 'required',
             'nik' => 'required|min_length[8]|is_unique[penduduk_new.nik]',
             'jenis_kelamin' => 'required',
-            'rt_id' => 'required|integer'
+            'rt_id' => 'required|is_natural_no_zero'
         ];
 
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+        $toValidate = array_merge($inti, ['rt_id' => $tinggal['rt_id'] ?? null, 'jenis_kelamin' => $inti['jenis_kelamin'] ?? null]);
+        if (!$validation->run($toValidate)) {
+            return redirect()->back()->withInput()->with('errors', $validation->getErrors());
         }
 
+
+        // Sanitasi RT dan pastikan RT ada di tabel rts sebelum transaksi
+        $tinggal['rt_id'] = isset($tinggal['rt_id']) && is_numeric($tinggal['rt_id']) ? (int)$tinggal['rt_id'] : null;
         $db = \Config\Database::connect();
-        $db->transStart();
-        $pendudukId = $this->pendudukIntiModel->insert($inti, true);
-        $mutasi['penduduk_id'] = $pendudukId;
-        $this->pendudukMutasiModel->insert($mutasi);
-        $tinggal['penduduk_id'] = $pendudukId;
-        $this->pendudukTinggalModel->insert($tinggal);
-        $rumah['penduduk_id'] = $pendudukId;
-        $this->rumahTanggaModel->insert($rumah);
-        $db->transComplete();
+        $rtOk = $tinggal['rt_id'] ? (bool) $db->table('rts')->where('id', $tinggal['rt_id'])->countAllResults() : false;
+        if (!$rtOk) {
+            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+        }
+
+        try {
+            $db->transException(true)->transStart();
+
+            $pendudukId = $this->pendudukIntiModel->insert($inti, true);
+            $mutasi['penduduk_id'] = $pendudukId;
+            $this->pendudukMutasiModel->insert($mutasi);
+            $tinggal['penduduk_id'] = $pendudukId;
+            $this->pendudukTinggalModel->insert($tinggal);
+            $rumah['penduduk_id'] = $pendudukId;
+            $this->rumahTanggaModel->insert($rumah);
+
+            $db->transComplete();
+        } catch (\Throwable $e) {
+            log_message('error', 'Store penduduk gagal: ' . $e->getMessage());
+            if ($db->transStatus() === false) {
+                $db->transRollback();
+            }
+            return redirect()->back()->withInput()->with('errors', ['Gagal menyimpan data. Pastikan RT valid dan data benar.']);
+        }
 
         if (!$db->transStatus()) {
             return redirect()->back()->withInput()->with('errors', ['Gagal menyimpan data']);
@@ -155,6 +254,7 @@ class PendudukController extends BaseController
     public function edit($id)
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         // Ambil data gabungan untuk form
         $inti = $this->pendudukIntiModel->find($id);
         if (!$inti) return redirect()->to(base_url('penduduk'))->with('error', 'Data tidak ditemukan');
@@ -163,30 +263,75 @@ class PendudukController extends BaseController
         $rumah   = $this->rumahTanggaModel->where('penduduk_id', $id)->first() ?? [];
 
         $role = (int) $this->session->get('role');
+        // Samakan dengan logika Musiman: pastikan rt_id tersedia di sesi untuk role=2
+        if ($role === 2) {
+            $this->ensureRtIdInSession();
+        }
         $rtId = $this->session->get('rt_id');
         if ($role === 2 && isset($tinggal['rt_id']) && (int)$tinggal['rt_id'] !== (int)$rtId) {
             return redirect()->to(base_url('penduduk'))->with('error', 'Tidak memiliki akses');
         }
 
-        $rtOptions = ($role === 2) ? [] : $this->rtModel->orderBy('rt', 'ASC')->findAll();
+        // Dropdown RT hanya untuk Admin atau ketika RT belum terset di sesi
+        $rtOptions = [];
+        $currentRt = null;
+        if ($role === 2 && !empty($rtId)) {
+            $currentRt = $this->rtModel->find((int) $rtId);
+        } else {
+            $rtOptions = $this->rtModel
+                ->orderBy('rt', 'ASC')
+                ->orderBy('rw', 'ASC')
+                ->findAll();
+        }
         return view('penduduk/form', [
             'title' => 'Edit Penduduk',
             'rtOptions' => $rtOptions,
-            'item' => array_merge($inti, $tinggal, $mutasi, $rumah),
+            'currentRt' => $currentRt,
+            // Pastikan ID penduduk tidak tertimpa oleh kolom id dari tabel relasi
+            'item' => array_merge($inti, ['penduduk_id' => $id], $tinggal, $mutasi, $rumah),
             'role' => session()->get('role'),
             'wilayah_nama' => session()->get('wilayah_nama'),
         ]);
     }
 
-    public function update($id)
+    public function update($id = null)
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        // Log incoming update request for debugging
+        try {
+            $actor = $this->session->get('user_id') ?? 'anon';
+            $postRaw = $this->request->getPost();
+            // Prefer POST 'id' field (hidden input) per user request
+            $resolvedId = $this->request->getPost('id');
+            if (empty($resolvedId) && $id !== null) {
+                $resolvedId = $id;
+            }
+            $resolvedId = is_numeric($resolvedId) ? (int)$resolvedId : null;
+            $logData = ['actor' => $actor, 'target_id' => $resolvedId, 'post_keys' => array_keys($postRaw)];
+            log_message('info', 'Penduduk update requested: ' . json_encode($logData));
+        } catch (\Throwable $e) {
+            // don't fail update for logging issues
+            log_message('error', 'Failed to log penduduk update request: ' . $e->getMessage());
+        }
+        if ($resolvedId === null) {
+            return redirect()->to(base_url('penduduk'))->with('error', 'ID penduduk tidak disertakan');
+        }
+        // Gunakan ID dari form hidden, abaikan kemungkinan id relasi
+        $id = (int) $resolvedId;
+        // Use PendudukIntiModel (maps to penduduk_new) to fetch existing row
         $intiBefore = $this->pendudukIntiModel->find($id);
         if (!$intiBefore) return redirect()->to(base_url('penduduk'))->with('error', 'Data tidak ditemukan');
         $tinggalBefore = $this->pendudukTinggalModel->where('penduduk_id', $id)->first() ?? [];
 
         $role = (int) $this->session->get('role');
         $rtId = $this->session->get('rt_id');
+        if ($role === 2) {
+            $this->ensureRtIdInSession();
+            $rtId = $this->session->get('rt_id');
+            if (!$rtId) {
+                return redirect()->to(base_url('penduduk'))->with('error', 'RT tidak tersedia di sesi. Silakan login ulang.');
+            }
+        }
         if ($role === 2 && isset($tinggalBefore['rt_id']) && (int)$tinggalBefore['rt_id'] !== (int)$rtId) {
             return redirect()->to(base_url('penduduk'))->with('error', 'Tidak memiliki akses');
         }
@@ -208,51 +353,96 @@ class PendudukController extends BaseController
         $tinggal = $this->request->getPost(['rt_id', 'status_rumah', 'luas_tanah', 'luas_bangunan']);
         $rumah  = $this->request->getPost(['air', 'listrik', 'sampah', 'limbah']);
 
-        if ($role === 2) $tinggal['rt_id'] = $rtId;
+        if ($role === 2) {
+            if ($rtId) {
+                $tinggal['rt_id'] = (int)$rtId;
+            } else {
+                // Sesi kosong: terima dari form
+                if (empty($tinggal['rt_id']) || !is_numeric($tinggal['rt_id'])) {
+                    return redirect()->back()->withInput()->with('errors', ['rt_id' => 'Silakan pilih RT']);
+                }
+                $tinggal['rt_id'] = (int)$tinggal['rt_id'];
+            }
+        }
         foreach (['kelahiran', 'pendatang', 'kematian', 'pindah'] as $f) {
             $mutasi[$f] = isset($mutasi[$f]) ? 1 : 0;
         }
 
+        // Manual uniqueness check for NIK when updating: if NIK changed and already exists for another record, reject.
+        $inputNik = isset($inti['nik']) ? trim($inti['nik']) : '';
+        if ($inputNik !== '' && $inputNik !== ($intiBefore['nik'] ?? '')) {
+            $existsNik = $this->pendudukIntiModel->where('nik', $inputNik)->where('id !=', $id)->first();
+            if ($existsNik) {
+                return redirect()->back()->withInput()->with('errors', ['nik' => 'NIK sudah digunakan oleh penduduk lain']);
+            }
+        }
+
         $rules = [
             'nama_lengkap' => 'required',
-            'nik' => "required|min_length[8]|is_unique[penduduk_new.nik,id,{$id}]",
+            'nik' => 'required|min_length[8]',
             'jenis_kelamin' => 'required',
+            'rt_id' => 'required|is_natural_no_zero',
         ];
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        $validation = \Config\Services::validation();
+        $validation->setRules($rules);
+        $toValidate = array_merge($inti, ['rt_id' => $tinggal['rt_id'] ?? null, 'jenis_kelamin' => $inti['jenis_kelamin'] ?? null]);
+        if (!$validation->run($toValidate)) {
+            return redirect()->back()->withInput()->with('errors', $validation->getErrors());
         }
 
+        // Sanitasi dan validasi FK RT sebelum transaksi
+        $tinggal['rt_id'] = isset($tinggal['rt_id']) && is_numeric($tinggal['rt_id']) ? (int)$tinggal['rt_id'] : null;
         $db = \Config\Database::connect();
-        $db->transStart();
-        $this->pendudukIntiModel->update($id, $inti);
-        // upsert mutasi
-        $existsMutasi = $this->pendudukMutasiModel->where('penduduk_id', $id)->first();
-        if ($existsMutasi) {
-            $this->pendudukMutasiModel->update($existsMutasi['id'], $mutasi);
-        } else {
-            $mutasi['penduduk_id'] = $id;
-            $this->pendudukMutasiModel->insert($mutasi);
+        $rtOk = $tinggal['rt_id'] ? (bool) $db->table('rts')->where('id', $tinggal['rt_id'])->countAllResults() : false;
+        if (!$rtOk) {
+            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
         }
-        // upsert tinggal
-        $existsTinggal = $this->pendudukTinggalModel->where('penduduk_id', $id)->first();
-        if ($existsTinggal) {
-            $this->pendudukTinggalModel->update($existsTinggal['id'], $tinggal);
-        } else {
-            $tinggal['penduduk_id'] = $id;
-            $this->pendudukTinggalModel->insert($tinggal);
+
+        try {
+            $db->transException(true)->transStart();
+
+            log_message('debug', 'Updating penduduk_inti id=' . $id . ' with data: ' . json_encode($inti));
+            $this->pendudukIntiModel->update($id, $inti);
+            // upsert mutasi
+            $existsMutasi = $this->pendudukMutasiModel->where('penduduk_id', $id)->first();
+            if ($existsMutasi) {
+                $this->pendudukMutasiModel->update($existsMutasi['id'], $mutasi);
+            } else {
+                $mutasi['penduduk_id'] = $id;
+                $this->pendudukMutasiModel->insert($mutasi);
+            }
+            // upsert tinggal
+            $existsTinggal = $this->pendudukTinggalModel->where('penduduk_id', $id)->first();
+            if ($existsTinggal) {
+                $this->pendudukTinggalModel->update($existsTinggal['id'], $tinggal);
+            } else {
+                $tinggal['penduduk_id'] = $id;
+                $this->pendudukTinggalModel->insert($tinggal);
+            }
+            // upsert rumah
+            $existsRumah = $this->rumahTanggaModel->where('penduduk_id', $id)->first();
+            if ($existsRumah) {
+                $this->rumahTanggaModel->update($existsRumah['id'], $rumah);
+            } else {
+                $rumah['penduduk_id'] = $id;
+                $this->rumahTanggaModel->insert($rumah);
+            }
+
+            $db->transComplete();
+            log_message('debug', 'Update penduduk berhasil untuk id=' . $id);
+        } catch (\Throwable $e) {
+            log_message('error', 'Update penduduk gagal: ' . $e->getMessage());
+            if ($db->transStatus() === false) {
+                $db->transRollback();
+            }
+            return redirect()->back()->withInput()->with('errors', ['Gagal memperbarui data. Pastikan RT valid dan data benar.']);
         }
-        // upsert rumah
-        $existsRumah = $this->rumahTanggaModel->where('penduduk_id', $id)->first();
-        if ($existsRumah) {
-            $this->rumahTanggaModel->update($existsRumah['id'], $rumah);
-        } else {
-            $rumah['penduduk_id'] = $id;
-            $this->rumahTanggaModel->insert($rumah);
-        }
-        $db->transComplete();
 
         if (!$db->transStatus()) {
-            return redirect()->back()->withInput()->with('errors', ['Gagal memperbarui data']);
+            $err = $db->error();
+            $msg = !empty($err['message']) ? $err['message'] : 'Gagal memperbarui data';
+            log_message('error', 'Transaksi update penduduk gagal: ' . $msg);
+            return redirect()->back()->withInput()->with('errors', [$msg]);
         }
 
         return redirect()->to(base_url('penduduk'))->with('success', 'Data penduduk berhasil diperbarui');
@@ -261,6 +451,7 @@ class PendudukController extends BaseController
     public function show($id)
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         $inti = $this->pendudukIntiModel->find($id);
         if (!$inti) return redirect()->to(base_url('penduduk'))->with('error', 'Data tidak ditemukan');
         $tinggal = $this->pendudukTinggalModel->where('penduduk_id', $id)->first() ?? [];
@@ -284,6 +475,7 @@ class PendudukController extends BaseController
     public function delete($id)
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         $inti = $this->pendudukIntiModel->find($id);
         if (!$inti) return redirect()->to(base_url('penduduk'))->with('error', 'Data tidak ditemukan');
         $tinggal = $this->pendudukTinggalModel->where('penduduk_id', $id)->first();
@@ -300,6 +492,7 @@ class PendudukController extends BaseController
     public function exportPdf()
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         // Export dari skema baru: join untuk RT
         $builder = $this->pendudukIntiModel->select('penduduk_new.*, penduduk_tinggal.rt_id')
             ->join('penduduk_tinggal', 'penduduk_tinggal.penduduk_id = penduduk_new.id', 'left');
@@ -322,6 +515,7 @@ class PendudukController extends BaseController
     public function exportExcel()
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
+        $this->ensureRtIdInSession();
         // Export dari skema baru: join untuk RT
         $builder = $this->pendudukIntiModel->select('penduduk_new.*, penduduk_tinggal.rt_id')
             ->join('penduduk_tinggal', 'penduduk_tinggal.penduduk_id = penduduk_new.id', 'left');

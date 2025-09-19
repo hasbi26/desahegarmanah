@@ -16,7 +16,6 @@
         <div id="layoutSidenav_content">
             <!-- <main class="container-fluid"> -->
                 <?= $this->renderSection('content') ?>
-                <?= $this->renderSection('scripts') ?>
 
             <!-- </main> -->
 
@@ -28,5 +27,6 @@
     <!-- Scripts -->
 
     <?= $this->include('layouts/partials/scripts') ?>
+    <?= $this->renderSection('scripts') ?>
 </body>
 </html>

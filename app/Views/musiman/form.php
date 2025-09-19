@@ -21,18 +21,38 @@
         </div>
     <?php endif; ?>
 
+    <?php if ((service('request')->getGet('debug_rt') ?? '') == '1'): ?>
+        <div class="alert alert-info">
+            <strong>DEBUG session:</strong>
+            <div>session('user_id'): <?= esc(session('user_id') ?? '-') ?></div>
+            <div>session('role'): <?= esc(session('role') ?? '-') ?></div>
+            <div>session('rt_id'): <?= esc(session('rt_id') ?? '-') ?></div>
+            <div>old('rt_id'): <?= esc(old('rt_id') ?? '-') ?></div>
+            <small class="text-muted">(Hapus ?debug_rt=1 setelah pengecekan)</small>
+        </div>
+    <?php endif; ?>
+
     <div class="card detail-card">
         <div class="card-header"><i class="lni lni-form me-1"></i> Input Data</div>
         <div class="card-body">
             <form method="post" action="<?= isset($item) ? base_url('musiman/' . $item['id'] . '/update') : base_url('musiman') ?>">
+                <?= csrf_field() ?>
+                <?php if (!empty($item['id'])): ?>
+                    <!-- Ensure form submits the record id so controller updates musiman -->
+                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                <?php endif; ?>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Periode (contoh: 2025-01)</label>
                         <input name="periode" class="form-control" value="<?= esc($item['periode'] ?? old('periode')) ?>" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Penduduk ID (opsional)</label>
-                        <input name="penduduk_id" class="form-control" value="<?= esc($item['penduduk_id'] ?? old('penduduk_id')) ?>">
+                        <label class="form-label">Penduduk (opsional)</label>
+                        <div class="position-relative">
+                            <input id="penduduk_search" type="text" class="form-control" placeholder="Cari nama atau NIK" value="<?= esc($item['penduduk_name'] ?? old('penduduk_name') ?? '') ?>">
+                            <input id="penduduk_id" name="penduduk_id" type="hidden" value="<?= esc($item['penduduk_id'] ?? old('penduduk_id')) ?>">
+                            <div id="penduduk_results" class="list-group position-absolute" style="z-index:50;width:100%;display:none;"></div>
+                        </div>
                     </div>
                     <?php if (session('role') == 1): ?>
                         <div class="col-md-4">
@@ -95,3 +115,46 @@
     </div>
 </div>
 <?= $this->endSection() ?>
+<?php $this->section('scripts') ?>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const search = document.getElementById('penduduk_search');
+    const hid = document.getElementById('penduduk_id');
+    const results = document.getElementById('penduduk_results');
+    let timeout = null;
+
+    function clearResults(){ results.innerHTML = ''; results.style.display = 'none'; }
+
+    function renderRows(rows){
+        results.innerHTML = '';
+        if (!rows || rows.length === 0) { clearResults(); return; }
+        rows.forEach(r => {
+            const a = document.createElement('a');
+            a.href = '#';
+            a.className = 'list-group-item list-group-item-action';
+            a.textContent = r.nama_lengkap + ' — ' + (r.nik || '-');
+            a.dataset.id = r.id;
+            a.addEventListener('click', function(ev){ ev.preventDefault(); hid.value = this.dataset.id; search.value = this.textContent; clearResults(); });
+            results.appendChild(a);
+        });
+        results.style.display = 'block';
+    }
+
+    search.addEventListener('input', function(){
+        hid.value = '';
+        const q = this.value.trim();
+        if (timeout) clearTimeout(timeout);
+        if (q.length < 2) { clearResults(); return; }
+        timeout = setTimeout(() => {
+            fetch('<?= base_url('api/penduduk-tetap/search') ?>?q=' + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(json => {
+                    if (json && json.status === 'ok') renderRows(json.data || []);
+                }).catch(()=>{ clearResults(); });
+        }, 300);
+    });
+
+    document.addEventListener('click', function(e){ if (!results.contains(e.target) && e.target !== search){ clearResults(); }});
+});
+</script>
+<?php $this->endSection() ?>

@@ -157,6 +157,22 @@ class UsersController extends BaseController
             $payload['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
         $this->userModel->update($id, $payload);
+        // If the currently logged-in user updated their own account, refresh session values
+        try {
+            $current = session('user_id');
+            if ($current && (int)$current === (int)$id) {
+                $sess = session();
+                $sess->set([
+                    'username' => $username,
+                    'email' => $email,
+                    'role' => $role,
+                    'rt_id' => $rtId,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // avoid breaking flow on session set errors; log for debugging
+            log_message('error', 'Failed to refresh session after user update: ' . $e->getMessage());
+        }
         return redirect()->to(base_url('users'))->with('success', 'User berhasil diperbarui');
     }
 
