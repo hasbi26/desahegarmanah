@@ -21,7 +21,15 @@ class MusimanModel extends Model
         'nama_pondokan',
         'alamat_pondokan',
         'no_telp',
-        'alamat_asal'
+        'alamat_asal',
+        'nama_lengkap',
+        'jenis_kelamin',
+        'nik',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'status_perkawinan',
+        'alasan_tinggal',
+        'lainnya',
     ];
     protected $useTimestamps = true;
 }

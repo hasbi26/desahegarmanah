@@ -41,8 +41,12 @@ class MusimanController extends BaseController
         $builder = $this->musimanModel;
         $this->restrictBuilderByRole($builder);
         if ($q) {
-            $builder = $builder->like('periode', $q)
-                ->orLike('keterangan', $q);
+            $builder = $builder->groupStart()
+                ->like('periode', $q)
+                ->orLike('keterangan', $q)
+                ->orLike('nama_lengkap', $q)
+                ->orLike('nik', $q)
+                ->groupEnd();
         }
         $total = $builder->countAllResults(false);
         $items = $builder->orderBy('updated_at', 'DESC')->findAll($perPage, $offset);
@@ -79,7 +83,15 @@ class MusimanController extends BaseController
             'alamat_pondokan',
             'no_telp',
             'alamat_asal',
-            'rt_id'
+            'rt_id',
+            'nama_lengkap',
+            'jenis_kelamin',
+            'nik',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'status_perkawinan',
+            'alasan_tinggal',
+            'lainnya',
         ]);
 
         $role = (int) $this->session->get('role');
@@ -188,7 +200,9 @@ class MusimanController extends BaseController
     public function update($id = null)
     {
         if (!$this->session->get('logged_in')) return redirect()->to('/');
-        if ($id === null) { $id = $this->request->getPost('id'); }
+        if ($id === null) {
+            $id = $this->request->getPost('id');
+        }
         $item = $this->musimanModel->find($id);
         if (!$item) return redirect()->to('musiman')->with('error', 'Data tidak ditemukan');
         $role = (int) $this->session->get('role');
@@ -207,7 +221,15 @@ class MusimanController extends BaseController
             'alamat_pondokan',
             'no_telp',
             'alamat_asal',
-            'rt_id'
+            'rt_id',
+            'nama_lengkap',
+            'jenis_kelamin',
+            'nik',
+            'tempat_lahir',
+            'tanggal_lahir',
+            'status_perkawinan',
+            'alasan_tinggal',
+            'lainnya',
         ]);
 
         if ($role === 2) {
@@ -328,5 +350,40 @@ class MusimanController extends BaseController
         return $this->response->setHeader('Content-Type', 'text/csv')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($content);
+    }
+
+    public function ajaxList()
+    {
+        if (!$this->session->get('logged_in')) {
+            return $this->response->setStatusCode(401)->setJSON(['error' => 'Unauthorized']);
+        }
+
+        $q = $this->request->getGet('q');
+        $page = max(1, (int) $this->request->getGet('page'));
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        $builder = $this->musimanModel;
+        $this->restrictBuilderByRole($builder);
+        if ($q) {
+            $builder = $builder->groupStart()
+                ->like('periode', $q)
+                ->orLike('keterangan', $q)
+                ->orLike('nama_lengkap', $q)
+                ->orLike('nik', $q)
+                ->groupEnd();
+        }
+        $total = $builder->countAllResults(false);
+        $items = $builder->orderBy('updated_at', 'DESC')->findAll($perPage, $offset);
+
+        $data = [
+            'items' => $items,
+            'q' => $q,
+            'page' => $page,
+            'perPage' => $perPage,
+            'total' => $total,
+            'totalPages' => (int) ceil($total / $perPage),
+        ];
+        return $this->response->setJSON($data);
     }
 }

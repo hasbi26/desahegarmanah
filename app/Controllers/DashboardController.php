@@ -30,9 +30,11 @@ class DashboardController extends BaseController
 
     private function restrictByRole($builder)
     {
-        $role = (int) $this->session->get('role');
+        $roleRaw = $this->session->get('role');
         $rtId = $this->session->get('rt_id');
-        if ($role === 2 && $rtId) {
+        $roleStr = strtolower((string)$roleRaw);
+        $isRT = ((int)$roleRaw === 2) || in_array($roleStr, ['rt', 'pengelola rt'], true);
+        if ($isRT && $rtId) {
             // Filter berdasarkan RT dari tabel penduduk_tinggal
             $builder->where('penduduk_tinggal.rt_id', $rtId);
         }
@@ -47,8 +49,10 @@ class DashboardController extends BaseController
                     ->with('error', 'Silakan login terlebih dahulu');
             }
 
-            $role = (int) $this->session->get('role');
+            $roleRaw = $this->session->get('role');
             $rtId = $this->session->get('rt_id');
+            $roleStr = strtolower((string)$roleRaw);
+            $isRT = ((int)$roleRaw === 2) || in_array($roleStr, ['rt', 'pengelola rt'], true);
 
             // Helper: buat builder baru untuk penduduk tetap + join penduduk_tinggal
             $db = \Config\Database::connect();
@@ -58,9 +62,9 @@ class DashboardController extends BaseController
                     ->join('penduduk_tinggal', 'penduduk_tinggal.penduduk_id = penduduk_new.id', 'left');
             };
 
-            // Builder musiman dengan scope RT (jika role=2)
+            // Builder musiman dengan scope RT (mendukung role string)
             $musiman = $this->musimanModel;
-            if ($role === 2 && $rtId) {
+            if ($isRT && $rtId) {
                 $musiman = $musiman->where('rt_id', $rtId);
             }
 
@@ -68,6 +72,18 @@ class DashboardController extends BaseController
             $cutoff    = date('Y-m-d H:i:s', strtotime('-30 days'));
             $prevStart = date('Y-m-d H:i:s', strtotime('-60 days'));
             $prevEnd   = $cutoff;
+
+            // Helper perubahan persen yang aman dari pembagi 0
+            $percent = static function (int $current, int $baseline): float {
+                if ($baseline > 0) {
+                    return (($current - $baseline) / $baseline) * 100.0;
+                }
+                if ($current > 0) {
+                    // Tampilkan 100% saat ada pertumbuhan dari nol agar informatif di UI
+                    return 100.0;
+                }
+                return 0.0;
+            };
 
             // Total Tetap dan baseline 30 hari lalu (pakai created_at penduduk_new)
             // Gunakan builder fresh untuk setiap hitungan agar join selalu ada
@@ -78,12 +94,12 @@ class DashboardController extends BaseController
                 log_message('error', 'Dashboard totalTetap query failed: ' . $e->getMessage());
                 $totalTetap = $totalTetapBefore = 0;
             }
-            $tetapChangePct = $totalTetapBefore > 0 ? (($totalTetap - $totalTetapBefore) / $totalTetapBefore) * 100 : 0;
+            $tetapChangePct = $percent((int)$totalTetap, (int)$totalTetapBefore);
 
             // Total Musiman dan baseline
             $totalMusiman = (clone $musiman)->countAllResults(false);
             $totalMusimanBefore = (clone $musiman)->where('created_at <', $cutoff)->countAllResults(false);
-            $musimanChangePct = $totalMusimanBefore > 0 ? (($totalMusiman - $totalMusimanBefore) / $totalMusimanBefore) * 100 : 0;
+            $musimanChangePct = $percent((int)$totalMusiman, (int)$totalMusimanBefore);
 
             // Penduduk Baru 30 hari (berdasarkan penduduk_new.created_at)
             $baru30 = $this->restrictByRole($buildTetap())->where('penduduk_new.created_at >=', $cutoff)->countAllResults(false);
@@ -91,12 +107,12 @@ class DashboardController extends BaseController
                 ->where('penduduk_new.created_at >=', $prevStart)
                 ->where('penduduk_new.created_at <', $prevEnd)
                 ->countAllResults(false);
-            $baruChangePct = $baruPrev30 > 0 ? (($baru30 - $baruPrev30) / $baruPrev30) * 100 : 0;
+            $baruChangePct = $percent((int)$baru30, (int)$baruPrev30);
 
             // Total keseluruhan
             $totalAll = $totalTetap + $totalMusiman;
             $totalAllBefore = $totalTetapBefore + $totalMusimanBefore;
-            $allChangePct = $totalAllBefore > 0 ? (($totalAll - $totalAllBefore) / $totalAllBefore) * 100 : 0;
+            $allChangePct = $percent((int)$totalAll, (int)$totalAllBefore);
 
             // Statistik berbasis tetap (skema baru) - robust mapping nilai JK ke L/P
             $jkRow = $this->restrictByRole($buildTetap())

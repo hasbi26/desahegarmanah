@@ -2,6 +2,26 @@
 
 <?= $this->section('content') ?>
 
+<div class="container-fluid py-3">
+    <?php if (session('errors')): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php foreach (session('errors') as $e): ?><li><?= esc($e) ?></li><?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <?php if (session('success')): ?>
+        <div class="alert alert-success">
+            <?= esc(session('success')) ?>
+        </div>
+    <?php elseif (session('error')): ?>
+        <div class="alert alert-danger">
+            <?= esc(session('error')) ?>
+        </div>
+    <?php endif; ?>
+</div>
+
 <!-- ========== section start ========== -->
 <section class="section">
     <div class="container-fluid">
@@ -193,16 +213,6 @@
             </div>
         </div>
 
-        <!-- Quick Actions / Links -->
-        <div class="card mb-4">
-            <div class="card-header"><i class="lni lni-cog"></i> Aksi Cepat</div>
-            <div class="card-body d-flex gap-2 flex-wrap">
-                <a class="btn btn-outline-primary" href="<?= base_url('penduduk') ?>">Kelola Data Penduduk</a>
-                <a class="btn btn-primary" href="<?= base_url('penduduk/create') ?>">Tambah Data Penduduk</a>
-                <a class="btn btn-outline-success" href="<?= base_url('musiman') ?>">Data Musiman</a>
-                <a class="btn btn-outline-secondary" href="<?= base_url('settings') ?>">Pengaturan</a>
-            </div>
-        </div>
 
     </div>
 </section>
@@ -328,164 +338,6 @@
         } catch (e) {
             console.error(e);
         }
-    });
-
-    // Enumerator CRUD via AJAX (existing)
-    $(document).ready(function() {
-        let currentPage = 1;
-        let searchQuery = "";
-        loadEnumerators(currentPage, searchQuery);
-
-        $("#search").on("keyup", function() {
-            searchQuery = $(this).val();
-            loadEnumerators(1, searchQuery);
-        });
-
-        $(document).on("click", ".page-link", function(e) {
-            e.preventDefault();
-            let page = $(this).data("page");
-            if (page) {
-                currentPage = page;
-                loadEnumerators(currentPage, searchQuery);
-            }
-        });
-
-        $("#saveEnumerator").click(function() {
-            let formData = $("#enumeratorForm").serialize();
-            $.ajax({
-                url: "<?= base_url('enumerator/store') ?>",
-                type: "POST",
-                data: formData,
-                dataType: "json",
-                success: function(response) {
-                    if (response.status === "success") {
-                        $("#addEnumeratorModal").modal("hide");
-                        $("#enumeratorForm")[0].reset();
-                        loadEnumerators(1, "");
-                        alert(response.message);
-                    } else {
-                        alert("Gagal: " + response.message);
-                    }
-                },
-                error: function(xhr) {
-                    console.error(xhr.responseText);
-                    alert("Terjadi kesalahan AJAX!");
-                }
-            });
-        });
-    });
-
-    function loadEnumerators(page, search) {
-        $.ajax({
-            url: "<?= base_url('enumerator/read') ?>",
-            type: "GET",
-            data: {
-                page,
-                search
-            },
-            success: function(response) {
-                let html = "";
-                let data = response.data || [];
-                let pagination = response.pagination || {
-                    currentPage: 1,
-                    totalPages: 1,
-                    perPage: 5
-                };
-                if (data.length > 0) {
-                    $.each(data, function(index, row) {
-                        let no = (pagination.currentPage - 1) * pagination.perPage + (index + 1);
-                        html += `
-            <tr>
-              <td>${no}</td>
-              <td>${row.nama}</td>
-              <td>${row.alamat ?? '-'}</td>
-              <td>${row.hp_telepon ?? '-'}</td>
-              <td>
-                <div class="action">
-                  <button class="text-warning btn-edit" data-id="${row.id}"><i class="lni lni-pencil-alt"></i></button>
-                  <button class="text-danger btn-delete" data-id="${row.id}"><i class="lni lni-trash-can"></i></button>
-                </div>
-              </td>
-            </tr>`;
-                    });
-                } else {
-                    html = `<tr><td colspan="6" class="text-center">Data tidak ditemukan</td></tr>`;
-                }
-                $("#enumeratorData").html(html);
-
-                // Pagination
-                let pagHtml = "";
-                let current = pagination.currentPage;
-                let totalPages = pagination.totalPages;
-                if (current > 1) {
-                    pagHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${current-1}">Previous</a></li>`;
-                }
-                for (let i = 1; i <= totalPages; i++) {
-                    pagHtml += `<li class="page-item ${i == current ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-                }
-                if (current < totalPages) {
-                    pagHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${current+1}">Next</a></li>`;
-                }
-                $("#pagination").html(pagHtml);
-            }
-        });
-    }
-
-    $(document).on("click", ".btn-edit", function() {
-        let id = $(this).data("id");
-        $.ajax({
-            url: "<?= base_url('enumerator') ?>" + "/" + id,
-            type: "GET",
-            dataType: "json",
-            success: function(response) {
-                if (response.status === "success") {
-                    let data = response.data;
-                    $("#editEnumeratorModal #nama").val(data.nama);
-                    $("#editEnumeratorModal #alamat").val(data.alamat);
-                    $("#editEnumeratorModal #hp_telepon").val(data.hp_telepon);
-                    $("#editEnumeratorModal").data("id", data.id);
-                    $("#editEnumeratorModal").modal("show");
-                } else {
-                    alert(response.message);
-                }
-            }
-        });
-    });
-
-    $(document).on("click", "#saveEnumeratorUpdate", function() {
-        let id = $("#editEnumeratorModal").data("id");
-        let formData = $("#editEnumeratorModal #enumeratorForm").serialize();
-        $.ajax({
-            url: "<?= base_url('enumerator/update') ?>" + "/" + id,
-            type: "POST",
-            data: formData,
-            dataType: "json",
-            success: function(response) {
-                if (response.status === "success") {
-                    $("#editEnumeratorModal").modal("hide");
-                    loadEnumerators(1, "");
-                    alert(response.message);
-                } else {
-                    alert("Gagal: " + response.message);
-                }
-            }
-        });
-    });
-
-    $(document).on("click", ".btn-delete", function() {
-        if (!confirm("Yakin ingin menghapus data ini?")) return;
-        let id = $(this).data("id");
-        $.ajax({
-            url: "<?= base_url('enumerator') ?>" + "/" + id,
-            type: "DELETE",
-            success: function(response) {
-                loadEnumerators(1, "");
-                alert(response.message || "Berhasil dihapus");
-            },
-            error: function() {
-                alert("Gagal menghapus data");
-            }
-        });
     });
 </script>
 

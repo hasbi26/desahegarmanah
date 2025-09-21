@@ -588,4 +588,51 @@ class PendudukController extends BaseController
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($content);
     }
+
+    public function search()
+    {
+        $keyword = $this->request->getGet('keyword');
+        $results = $this->pendudukIntiModel
+            ->like('nama', $keyword)
+            ->orLike('nik', $keyword)
+            ->findAll();
+
+        return $this->response->setJSON($results);
+    }
+
+    public function ajaxList()
+    {
+        if (!$this->session->get('logged_in')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON(['error' => 'Unauthorized']);
+        }
+        $this->ensureRtIdInSession();
+
+        $q = $this->request->getGet('q');
+        $page = max(1, (int) $this->request->getGet('page'));
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        $builder = $this->pendudukIntiModel->select('penduduk_new.id AS penduduk_id, penduduk_new.nik, penduduk_new.nama_lengkap, penduduk_new.jenis_kelamin, penduduk_new.alamat, penduduk_new.updated_at, penduduk_tinggal.rt_id')
+            ->join('penduduk_tinggal', 'penduduk_tinggal.penduduk_id = penduduk_new.id', 'left');
+        $this->restrictBuilderByRole($builder);
+        if ($q) {
+            $builder = $builder->groupStart()
+                ->like('penduduk_new.nama_lengkap', $q)
+                ->orLike('penduduk_new.nik', $q)
+                ->orLike('penduduk_new.no_kk', $q)
+                ->orLike('penduduk_new.alamat', $q)
+                ->groupEnd();
+        }
+        $total = $builder->countAllResults(false);
+        $items = $builder->orderBy('penduduk_new.updated_at', 'DESC')->findAll($perPage, $offset);
+
+        $data = [
+            'items' => $items,
+            'page' => $page,
+            'perPage' => $perPage,
+            'total' => $total,
+            'totalPages' => (int) ceil($total / $perPage),
+        ];
+        return $this->response->setJSON($data);
+    }
 }

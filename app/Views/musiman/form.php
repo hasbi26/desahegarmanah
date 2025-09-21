@@ -106,6 +106,45 @@
                         <label class="form-label">Alamat Asal</label>
                         <textarea name="alamat_asal" class="form-control" rows="2"><?= esc($item['alamat_asal'] ?? old('alamat_asal')) ?></textarea>
                     </div>
+
+                    <hr class="mt-4" />
+                    <div class="col-12"><strong>Data Pribadi</strong></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input name="nama_lengkap" class="form-control" value="<?= esc($item['nama_lengkap'] ?? old('nama_lengkap')) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" class="form-select">
+                            <option value="" disabled selected>Pilih</option>
+                            <option value="L" <?= (old('jenis_kelamin') === 'L' || ($item['jenis_kelamin'] ?? '') === 'L') ? 'selected' : '' ?>>Laki-laki</option>
+                            <option value="P" <?= (old('jenis_kelamin') === 'P' || ($item['jenis_kelamin'] ?? '') === 'P') ? 'selected' : '' ?>>Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">NIK</label>
+                        <input name="nik" class="form-control" value="<?= esc($item['nik'] ?? old('nik')) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tempat Lahir</label>
+                        <input name="tempat_lahir" class="form-control" value="<?= esc($item['tempat_lahir'] ?? old('tempat_lahir')) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tanggal Lahir</label>
+                        <input name="tanggal_lahir" type="date" class="form-control" value="<?= esc($item['tanggal_lahir'] ?? old('tanggal_lahir')) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status Perkawinan</label>
+                        <input name="status_perkawinan" class="form-control" value="<?= esc($item['status_perkawinan'] ?? old('status_perkawinan')) ?>">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Alasan Tinggal</label>
+                        <textarea name="alasan_tinggal" class="form-control" rows="2"><?= esc($item['alasan_tinggal'] ?? old('alasan_tinggal')) ?></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Lainnya</label>
+                        <textarea name="lainnya" class="form-control" rows="2"><?= esc($item['lainnya'] ?? old('lainnya')) ?></textarea>
+                    </div>
                 </div>
                 <div class="mt-3">
                     <button class="btn btn-primary" type="submit">Simpan</button>
@@ -115,46 +154,66 @@
     </div>
 </div>
 <?= $this->endSection() ?>
-<?php $this->section('scripts') ?>
+<?= $this->section('scripts') ?>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-    const search = document.getElementById('penduduk_search');
-    const hid = document.getElementById('penduduk_id');
-    const results = document.getElementById('penduduk_results');
-    let timeout = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        const search = document.getElementById('penduduk_search');
+        const hid = document.getElementById('penduduk_id');
+        const results = document.getElementById('penduduk_results');
+        let timeout = null;
 
-    function clearResults(){ results.innerHTML = ''; results.style.display = 'none'; }
+        function clearResults() {
+            results.innerHTML = '';
+            results.style.display = 'none';
+        }
 
-    function renderRows(rows){
-        results.innerHTML = '';
-        if (!rows || rows.length === 0) { clearResults(); return; }
-        rows.forEach(r => {
-            const a = document.createElement('a');
-            a.href = '#';
-            a.className = 'list-group-item list-group-item-action';
-            a.textContent = r.nama_lengkap + ' — ' + (r.nik || '-');
-            a.dataset.id = r.id;
-            a.addEventListener('click', function(ev){ ev.preventDefault(); hid.value = this.dataset.id; search.value = this.textContent; clearResults(); });
-            results.appendChild(a);
+        function renderRows(rows) {
+            results.innerHTML = '';
+            if (!rows || rows.length === 0) {
+                clearResults();
+                return;
+            }
+            rows.forEach(r => {
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'list-group-item list-group-item-action';
+                a.textContent = r.nama_lengkap + ' — ' + (r.nik || '-');
+                a.dataset.id = r.id;
+                a.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    hid.value = this.dataset.id;
+                    search.value = this.textContent;
+                    clearResults();
+                });
+                results.appendChild(a);
+            });
+            results.style.display = 'block';
+        }
+
+        search.addEventListener('input', function() {
+                hid.value = '';
+                const q = this.value.trim();
+                if (timeout) clearTimeout(timeout);
+                if (q.length < 2) {
+                    clearResults();
+                    return;
+                }
+                timeout = setTimeout(() => {
+                        fetch('<?= base_url('api/penduduk-tetap/search') ?>?q=' + encodeURIComponent(q))
+                            .then(r => r.json())
+                            .then(json => {
+                                if (json && json.status === 'ok') renderRows(json.data || []);
+                            }).catch(() => {
+                        clearResults();
+                    });
+                }, 300);
         });
-        results.style.display = 'block';
-    }
 
-    search.addEventListener('input', function(){
-        hid.value = '';
-        const q = this.value.trim();
-        if (timeout) clearTimeout(timeout);
-        if (q.length < 2) { clearResults(); return; }
-        timeout = setTimeout(() => {
-            fetch('<?= base_url('api/penduduk-tetap/search') ?>?q=' + encodeURIComponent(q))
-                .then(r => r.json())
-                .then(json => {
-                    if (json && json.status === 'ok') renderRows(json.data || []);
-                }).catch(()=>{ clearResults(); });
-        }, 300);
+    document.addEventListener('click', function(e) {
+        if (!results.contains(e.target) && e.target !== search) {
+            clearResults();
+        }
     });
-
-    document.addEventListener('click', function(e){ if (!results.contains(e.target) && e.target !== search){ clearResults(); }});
-});
+    });
 </script>
-<?php $this->endSection() ?>
+<?= $this->endSection() ?>

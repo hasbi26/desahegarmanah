@@ -66,8 +66,6 @@
                 <small class="text-muted">Kelola data penduduk</small>
             </div>
             <div class="d-flex gap-2">
-                <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('penduduk/export/excel') ?>" title="Export CSV"><i class="lni lni-download"></i> CSV</a>
-                <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('penduduk/export/pdf') ?>" target="_blank" title="Export PDF"><i class="lni lni-printer"></i> PDF</a>
                 <a class="btn btn-primary btn-sm" href="<?= base_url('penduduk/create') ?>" title="Tambah Data"><i class="lni lni-plus"></i> Tambah</a>
             </div>
         </div>
@@ -85,13 +83,13 @@
                     </ul>
                 </div>
             <?php endif; ?>
-            <form class="row g-2 mb-3" method="get">
+            <form id="search-form" class="row g-2 mb-3">
                 <div class="col-md-6 position-relative">
                     <i class="lni lni-search search-icon"></i>
                     <input type="text" name="q" value="<?= esc($q) ?>" class="form-control search-input" placeholder="Cari nama/NIK/KK/alamat" />
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-outline-primary" title="Cari"><i class="lni lni-search-alt"></i> Cari</button>
+                    <button class="btn btn-outline-primary" type="submit" title="Cari"><i class="lni lni-search-alt"></i> Cari</button>
                 </div>
             </form>
 
@@ -108,25 +106,55 @@
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php if (!empty($items)): $no = 1 + ($page - 1) * $perPage;
-                            foreach ($items as $i): ?>
+                    <tbody id="penduduk-body">
+                        <!-- Data akan diisi via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+
+            <nav>
+                <ul id="pagination" class="pagination mb-0">
+                    <!-- Pagination akan diisi via AJAX -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let currentPage = 1;
+        let currentQ = '';
+
+        function loadData(page = 1, q = '') {
+            $.ajax({
+                url: '<?= base_url('penduduk/list-data') ?>',
+                method: 'GET',
+                data: { page: page, q: q },
+                dataType: 'json',
+                success: function(data) {
+                    let tbody = $('#penduduk-body');
+                    tbody.empty();
+                    if (data.items && data.items.length > 0) {
+                        let no = 1 + (data.page - 1) * data.perPage;
+                        data.items.forEach(function(i) {
+                            let row = `
                                 <tr>
-                                    <td><?= $no++ ?></td>
-                                    <td><?= esc($i['nik']) ?></td>
-                                    <td><?= esc($i['nama_lengkap']) ?></td>
-                                    <td><?= esc($i['jenis_kelamin']) ?></td>
-                                    <td><?= esc($i['alamat']) ?></td>
-                                    <td><?= esc($i['rt_id']) ?></td>
+                                    <td>${no++}</td>
+                                    <td>${i.nik}</td>
+                                    <td>${i.nama_lengkap}</td>
+                                    <td>${i.jenis_kelamin}</td>
+                                    <td>${i.alamat}</td>
+                                    <td>${i.rt_id}</td>
                                     <td>
                                         <div class="actions">
-                                            <a href="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id'])) ?>" class="btn btn-outline-secondary btn-icon" title="Lihat">
+                                            <a href="<?= base_url('penduduk/') ?>${i.penduduk_id}" class="btn btn-outline-secondary btn-icon" title="Lihat">
                                                 <i class="lni lni-eye"></i>
                                             </a>
-                                            <a href="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id']) . '/edit') ?>" class="btn btn-warning btn-icon" title="Edit">
+                                            <a href="<?= base_url('penduduk/') ?>${i.penduduk_id}/edit" class="btn btn-warning btn-icon" title="Edit">
                                                 <i class="lni lni-pencil"></i>
                                             </a>
-                                            <form action="<?= base_url('penduduk/' . ($i['penduduk_id'] ?? $i['id']) . '/delete') ?>" method="post" onsubmit="return confirm('Hapus data ini?')" style="display:inline">
+                                            <form action="<?= base_url('penduduk/') ?>${i.penduduk_id}/delete" method="post" onsubmit="return confirm('Hapus data ini?')" style="display:inline">
                                                 <button class="btn btn-danger btn-icon" type="submit" title="Hapus">
                                                     <i class="lni lni-trash-can"></i>
                                                 </button>
@@ -134,28 +162,57 @@
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endforeach;
-                        else: ?>
-                            <tr>
-                                <td colspan="7" class="text-center py-4">Tidak ada data</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                            `;
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="7" class="text-center py-4">Tidak ada data</td></tr>');
+                    }
 
-            <?php if (($totalPages ?? 1) > 1): ?>
-                <nav>
-                    <ul class="pagination mb-0">
-                        <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-                            <li class="page-item <?= $p == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?q=<?= urlencode($q) ?>&page=<?= $p ?>"><?= $p ?></a>
-                            </li>
-                        <?php endfor; ?>
-                    </ul>
-                </nav>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
+                    // Render pagination
+                    let pagination = $('#pagination');
+                    pagination.empty();
+                    const q = ($('input[name="q"]').val() || '').trim();
+                    const buildHref = (p) => `?q=${encodeURIComponent(q)}&page=${p}`;
+                    const maxPage = Math.max(1, parseInt(data.totalPages || 0, 10));
+                    const current = Math.max(1, parseInt(data.page || 1, 10));
+                    if (maxPage > 10) {
+                        for (let p = 1; p <= 10; p++) {
+                            let active = p === current ? 'active' : '';
+                            pagination.append(`<li class="page-item ${active}"><a class="page-link" href="${buildHref(p)}" data-page="${p}">${p}</a></li>`);
+                        }
+                        const nextPage = Math.min(current + 1, maxPage);
+                        pagination.append(`<li class="page-item"><a class="page-link" href="${buildHref(nextPage)}" data-page="${nextPage}">Next</a></li>`);
+                    } else {
+                        for (let p = 1; p <= maxPage; p++) {
+                            let active = p === current ? 'active' : '';
+                            pagination.append(`<li class="page-item ${active}"><a class="page-link" href="${buildHref(p)}" data-page="${p}">${p}</a></li>`);
+                        }
+                    }
+                },
+                error: function() {
+                    alert('Gagal memuat data');
+                }
+            });
+        }
+
+        // Initial load
+        loadData(currentPage, currentQ);
+
+        // Search form submit
+        $('#search-form').on('submit', function(e) {
+            e.preventDefault();
+            currentQ = $('input[name="q"]').val();
+            currentPage = 1;
+            loadData(currentPage, currentQ);
+        });
+
+        // Pagination click
+        $('#pagination').on('click', 'a', function(e) {
+            e.preventDefault();
+            currentPage = $(this).data('page');
+            loadData(currentPage, currentQ);
+        });
+    });
+</script>
 <?= $this->endSection() ?>

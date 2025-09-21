@@ -3,6 +3,16 @@
 $role = $role ?? session('role');
 $wilayah_nama = $wilayah_nama ?? session('wilayah_nama');
 $username = $username ?? session('username');
+
+// Determine role label shown in the UI based on DB/session value
+$roleLabel = '';
+if (is_string($role) && $role !== '') {
+    // show exactly what is stored in DB (e.g., 'desa/admin', 'rt', 'kecamatan', 'kabupaten')
+    $roleLabel = $role;
+} else {
+    // fallback for numeric roles that might be set by older login flow
+    $roleLabel = ((int)($role ?? 0) === 1) ? 'admin' : 'pengelola rt';
+}
 ?>
 <main class="main-wrapper">
     <header class="header">
@@ -33,7 +43,7 @@ $username = $username ?? session('username');
                                         </div>
                                         <div>
                                             <h6 class="fw-500"><?= esc($username ?? '-') ?></h6>
-                                            <p><?= ((int)($role ?? 0) === 1 || strtolower((string)($role ?? '')) === 'admin') ? 'Admin' : 'Pengelola RT' ?></p>
+                                            <p><?= esc($roleLabel) ?></p>
                                             <!-- Debug sementara -->
                                         </div>
                                     </div>
@@ -46,10 +56,10 @@ $username = $username ?? session('username');
                                             <img src="<?= base_url('/img/logo.png') ?>" alt="image">
                                         </div>
                                         <div class="content">
-                                            <h4 class="text-sm"><?= esc($wilayah_nama ?? '-') ?></h4>
                                             <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" href="#">
                                                 <?= esc($username ?? '-') ?>
                                             </a>
+                                            <p><?= esc($roleLabel) ?></p>
                                         </div>
                                     </div>
                                 </li>

@@ -5,6 +5,7 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
+$routes->setAutoRoute(false);
 $routes->get('/', 'AuthController::index');
 $routes->post('/auth/login', 'AuthController::auth');
 $routes->get('/auth/logout', 'AuthController::logout');
@@ -30,6 +31,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('penduduk/(:num)/delete', 'PendudukController::delete/$1');
     $routes->get('penduduk/export/pdf', 'PendudukController::exportPdf');
     $routes->get('penduduk/export/excel', 'PendudukController::exportExcel');
+    $routes->get('penduduk/search', 'PendudukController::search');
+    $routes->get('penduduk/list-data', 'PendudukController::ajaxList');
 
     // Musiman
     $routes->get('musiman', 'MusimanController::index');
@@ -40,6 +43,9 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->post('musiman/(:num)/delete', 'MusimanController::delete/$1');
     $routes->get('musiman/export/pdf', 'MusimanController::exportPdf');
     $routes->get('musiman/export/excel', 'MusimanController::exportExcel');
+    $routes->get('musiman/(:num)', 'MusimanController::show/$1');
+    $routes->get('musiman/(:num)/detail', 'MusimanController::detail/$1');
+    $routes->get('musiman/ajaxList', 'MusimanController::ajaxList');
 
     // Users (Admin only)
     $routes->get('users', 'UsersController::index');
@@ -48,14 +54,7 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     $routes->get('users/(:num)/edit', 'UsersController::edit/$1');
     $routes->post('users/(:num)/update', 'UsersController::update/$1');
     $routes->post('users/(:num)/delete', 'UsersController::delete/$1');
-
-    // Enumerator (tetap)
-    // $routes->post('enumerator/store', 'EnumeratorController::store');
-    // $routes->get('enumerator/read', 'EnumeratorController::read');
-    // $routes->get('enumerator/(:num)', 'EnumeratorController::getById/$1');
-    // $routes->post('enumerator/update/(:num)', 'EnumeratorController::update/$1');
-    // $routes->delete('enumerator/(:num)', 'EnumeratorController::delete/$1');
-    // $routes->get('enumerator/options', 'EnumeratorController::getEnumerators');
+    $routes->get('users/form', 'UsersController::create');
 
     $routes->post('kuesioner/getData', 'KuesionerController::getData');
     $routes->get('kuesioner/create', 'KuesionerController::create');
@@ -88,50 +87,8 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
     });
 });
 
-// Public API routes for AJAX (adjust filter if you want them protected)
-$routes->group('api', static function ($routes) {
-    $routes->get('enumerators', 'API\Api::enumerators');
-    $routes->get('penduduk/(:num)', 'API\Api::penduduk/$1');
-    $routes->post('echo', 'API\Api::echo');
-    // Resource-style routes for newly added API controllers
-    // Penduduk
-    $routes->get('penduduk', 'API\Penduduk::index');
-    $routes->get('penduduk/(:num)', 'API\Penduduk::show/$1');
-    $routes->post('penduduk', 'API\Penduduk::store');
-    $routes->put('penduduk/(:num)', 'API\Penduduk::update/$1');
-    $routes->delete('penduduk/(:num)', 'API\Penduduk::delete/$1');
-
-    // Enumerator
-    $routes->get('enumerator', 'API\Enumerator::index');
-    $routes->get('enumerator/(:num)', 'API\Enumerator::show/$1');
-    $routes->post('enumerator', 'API\Enumerator::store');
-    $routes->post('enumerator/(:num)/update', 'API\Enumerator::update/$1');
-    $routes->delete('enumerator/(:num)', 'API\Enumerator::delete/$1');
-
-    // Musiman
-    $routes->get('musiman', 'API\Musiman::index');
-    $routes->get('musiman/(:num)', 'API\Musiman::show/$1');
-    $routes->post('musiman', 'API\Musiman::store');
-    $routes->put('musiman/(:num)', 'API\Musiman::update/$1');
-    $routes->delete('musiman/(:num)', 'API\Musiman::delete/$1');
-
-    // Users
-    $routes->get('users', 'API\Users::index');
-    $routes->get('users/(:num)', 'API\Users::show/$1');
-    $routes->post('users', 'API\Users::store');
-    $routes->put('users/(:num)', 'API\Users::update/$1');
-    $routes->delete('users/(:num)', 'API\Users::delete/$1');
-});
-
 // REST API routes
 $routes->group('api', static function ($routes) {
-    // Akses Kesehatan CRUD
-    $routes->get('akses-kesehatan', 'Api\AksesKesehatanController::index');
-    $routes->get('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::show/$1');
-    $routes->post('akses-kesehatan', 'Api\AksesKesehatanController::create');
-    $routes->put('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::update/$1');
-    $routes->patch('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::update/$1');
-    $routes->delete('akses-kesehatan/(:num)', 'Api\AksesKesehatanController::delete/$1');
 
     // Penduduk Tetap (penduduk_new + penduduk_tinggal)
     $routes->get('penduduk-tetap', 'Api\PendudukTetapController::index');

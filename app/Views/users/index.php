@@ -8,7 +8,7 @@
                 <small class="text-muted">Kelola akun pengelola RT</small>
             </div>
             <div class="d-flex gap-2">
-                <a class="btn btn-primary btn-sm" href="<?= base_url('users/create') ?>"><i class="lni lni-plus"></i> Tambah</a>
+                <a class="btn btn-primary btn-sm" href="<?= base_url('users/form') ?>"><i class="lni lni-plus"></i> Tambah</a>
             </div>
         </div>
         <div class="card-body">
@@ -70,18 +70,131 @@
                     </tbody>
                 </table>
             </div>
-            <?php if (($totalPages ?? 1) > 1): ?>
-                <nav>
-                    <ul class="pagination mb-0">
-                        <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-                            <li class="page-item <?= $p == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?q=<?= urlencode($q ?? '') ?>&page=<?= $p ?>"><?= $p ?></a>
-                            </li>
-                        <?php endfor; ?>
-                    </ul>
-                </nav>
-            <?php endif; ?>
+            <nav>
+                <ul class="pagination mb-0"></ul>
+            </nav>
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
+<?= $this->section('scripts') ?>
+<script>
+(function(){
+  const listEl = document.querySelector('table tbody');
+  const pagEl = document.querySelector('.pagination');
+  const form = document.querySelector('form');
+  const qInput = document.querySelector('input[name="q"]');
+  let page = parseInt('<?= (int)($page ?? 1) ?>', 10) || 1;
+  let isLoading = false;
+
+  function renderRows(items){
+    if(!listEl) return;
+    listEl.innerHTML = '';
+    if(!items || items.length === 0){
+      listEl.innerHTML = '<tr><td colspan="6" class="text-center py-4">Tidak ada data</td></tr>';
+      return;
+    }
+    let no = 1 + (page - 1) * (<?= (int)($perPage ?? 10) ?>);
+    items.forEach(i => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${no++}</td>
+        <td>${escapeHtml(i.username)}</td>
+        <td>${escapeHtml(i.email ?? '')}</td>
+        <td>${escapeHtml((i.rt ?? '-') + '/' + (i.rw ?? '-'))}</td>
+        <td>${(parseInt(i.is_active ?? 1,10)===1)?'<span class="badge bg-success">Aktif</span>':'<span class="badge bg-secondary">Nonaktif</span>'}</td>
+        <td>
+          <div class="actions">
+            <a href="<?= base_url('users') ?>/${i.id}/edit" class="btn btn-warning btn-icon" title="Edit">
+              <i class="lni lni-pencil"></i>
+            </a>
+            <button data-id="${i.id}" class="btn btn-danger btn-icon btn-del" title="Hapus">
+              <i class="lni lni-trash-can"></i>
+            </button>
+          </div>
+        </td>`;
+      listEl.appendChild(tr);
+    });
+  }
+
+  function renderPagination(totalPages){
+    if(!pagEl) return;
+    let html = '';
+    const q = (qInput?.value || '').trim();
+    const buildHref = (p) => `?q=${encodeURIComponent(q)}&page=${p}`;
+    if(!totalPages || totalPages <= 1){
+      pagEl.innerHTML = '';
+      return;
+    }
+    if(totalPages > 10){
+      for(let p=1; p<=10; p++){
+        html += `<li class="page-item ${p===page?'active':''}"><a class="page-link" href="${buildHref(p)}" data-page="${p}">${p}</a></li>`;
+      }
+      const nextPage = Math.min(page + 1, totalPages);
+      html += `<li class="page-item"><a class="page-link" href="${buildHref(nextPage)}" data-page="${nextPage}">Next</a></li>`;
+    } else {
+      for(let p=1; p<=totalPages; p++){
+        html += `<li class="page-item ${p===page?'active':''}"><a class="page-link" href="${buildHref(p)}" data-page="${p}">${p}</a></li>`;
+      }
+    }
+    pagEl.innerHTML = html;
+  }
+
+  function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+  }
+
+  function load(){
+    if(isLoading) return; isLoading = true;
+    const q = (qInput?.value || '').trim();
+    const url = new URL('<?= base_url('users') ?>', window.location.origin);
+    url.searchParams.set('q', q);
+    url.searchParams.set('page', String(page));
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+      .then(r => r.json())
+      .then(json => {
+        if(json.status === 'ok'){
+          renderRows(json.items);
+          renderPagination(parseInt(json.totalPages||1,10));
+        }
+      })
+      .catch(()=>{})
+      .finally(()=>{ isLoading = false; });
+  }
+
+  // Search submit -> prevent default and load via ajax
+  if(form){
+    form.addEventListener('submit', function(e){ e.preventDefault(); page = 1; load(); });
+  }
+
+  // Pagination click
+  document.addEventListener('click', function(e){
+    const a = e.target.closest('.pagination a.page-link');
+    if(a){
+      e.preventDefault();
+      const p = parseInt(a.getAttribute('data-page'),10);
+      if(p && p !== page){ page = p; load(); }
+    }
+    const delBtn = e.target.closest('button.btn-del');
+    if(delBtn){
+      e.preventDefault();
+      const id = delBtn.getAttribute('data-id');
+      if(!id) return;
+      if(!confirm('Hapus user ini?')) return;
+      const delUrl = '<?= base_url('users') ?>/'+id+'/delete';
+      fetch(delUrl, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(r => r.json()).then(json => {
+        if(json.status === 'ok'){
+          load();
+        }
+      }).catch(()=>{});
+    }
+  });
+
+  // Initial auto-load to sync with server data
+  load();
+})();
+</script>
 <?= $this->endSection() ?>

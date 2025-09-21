@@ -21,6 +21,16 @@
         </div>
     <?php endif; ?>
 
+    <?php if (session('success')): ?>
+        <div class="alert alert-success">
+            <?= esc(session('success')) ?>
+        </div>
+    <?php elseif (session('error')): ?>
+        <div class="alert alert-danger">
+            <?= esc(session('error')) ?>
+        </div>
+    <?php endif; ?>
+
     <div class="card detail-card">
         <div class="card-header"><i class="lni lni-protection me-1"></i> Data Pengguna</div>
         <div class="card-body">
@@ -47,8 +57,10 @@
                         <label class="form-label">Role</label>
                         <select name="role" class="form-select" required>
                             <option value="">- pilih -</option>
-                            <option value="1" <?= isset($item['role']) ? (((int)$item['role'] === 1) ? 'selected' : '') : (((int)old('role') === 1) ? 'selected' : '') ?>>Admin</option>
-                            <option value="2" <?= isset($item['role']) ? (((int)$item['role'] === 2) ? 'selected' : '') : (((int)old('role') === 2) ? 'selected' : '') ?>>Pengelola RT</option>
+                            <option value="desa/admin" <?= isset($item['role']) && $item['role'] === 'desa/admin' ? 'selected' : '' ?>>Desa/Admin</option>
+                            <option value="rt" <?= isset($item['role']) && $item['role'] === 'rt' ? 'selected' : '' ?>>RT</option>
+                            <option value="kecamatan" <?= isset($item['role']) && $item['role'] === 'kecamatan' ? 'selected' : '' ?>>Kecamatan</option>
+                            <option value="kabupaten" <?= isset($item['role']) && $item['role'] === 'kabupaten' ? 'selected' : '' ?>>Kabupaten</option>
                         </select>
                     </div>
                     <div class="col-md-4">

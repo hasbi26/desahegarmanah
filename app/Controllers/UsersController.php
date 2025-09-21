@@ -19,10 +19,12 @@ class UsersController extends BaseController
 
     public function index()
     {
-        // Only admin
-        $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
-        if (!$__isAdmin) {
+        // Only admin or desa/admin
+        $__role = strtolower((string)session('role'));
+        if ($__role !== 'admin' && $__role !== 'desa/admin') {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(403)->setJSON(['status' => 'error', 'message' => 'Akses ditolak']);
+            }
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
 
@@ -43,20 +45,46 @@ class UsersController extends BaseController
         $builder->orderBy('u.id', 'DESC')->limit($perPage, ($page - 1) * $perPage);
         $items = $builder->get()->getResultArray();
 
+        // Pagination logic
+        $totalPages = (int)ceil($total / $perPage);
+        $pagination = [];
+        if ($totalPages > 10) {
+            for ($i = 1; $i <= 10; $i++) {
+                $pagination[] = $i;
+            }
+            $pagination['next'] = $page < $totalPages ? $page + 1 : null;
+        } else {
+            for ($i = 1; $i <= $totalPages; $i++) {
+                $pagination[] = $i;
+            }
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'items' => $items,
+                'page' => $page,
+                'perPage' => $perPage,
+                'totalPages' => $totalPages,
+                'total' => $total,
+            ]);
+        }
+        
         return view('users/index', [
             'title' => 'Pengguna',
             'items' => $items,
             'q' => $q,
             'page' => $page,
             'perPage' => $perPage,
-            'totalPages' => (int)ceil($total / $perPage),
+            'totalPages' => $totalPages,
+            'pagination' => $pagination,
         ]);
     }
 
     public function create()
     {
         $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
+        $__isAdmin = in_array(strtolower((string)($__role ?? '')), ['admin', 'desa/admin']);
         if (!$__isAdmin) {
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
@@ -67,7 +95,7 @@ class UsersController extends BaseController
     public function store()
     {
         $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
+        $__isAdmin = in_array(strtolower((string)($__role ?? '')), ['admin', 'desa/admin']);
         if (!$__isAdmin) {
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
@@ -75,13 +103,13 @@ class UsersController extends BaseController
         $email = trim((string)$this->request->getPost('email'));
         $password = (string)$this->request->getPost('password');
         $rtId = (int)$this->request->getPost('rt_id');
-        $role = (int)$this->request->getPost('role');
+        $role = $this->request->getPost('role');
         $isActive = (int)$this->request->getPost('is_active') === 1 ? 1 : 0;
 
-        if ($username === '' || $password === '' || $rtId <= 0 || $role <= 0) {
+        if ($username === '' || $password === '' || $rtId <= 0 || $role === '') {
             return redirect()->back()->with('error', 'Username, Password, RT, dan Role wajib diisi')->withInput();
         }
-        if (!in_array($role, [1, 2], true)) {
+        if (!in_array($role, ['desa/admin', 'rt', 'kecamatan', 'kabupaten'], true)) {
             return redirect()->back()->with('error', 'Role tidak valid')->withInput();
         }
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -108,7 +136,7 @@ class UsersController extends BaseController
     public function edit($id)
     {
         $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
+        $__isAdmin = in_array(strtolower((string)($__role ?? '')), ['admin', 'desa/admin']);
         if (!$__isAdmin) {
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
@@ -121,19 +149,19 @@ class UsersController extends BaseController
     public function update($id)
     {
         $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
+        $__isAdmin = in_array(strtolower((string)($__role ?? '')), ['admin', 'desa/admin']);
         if (!$__isAdmin) {
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
         $username = trim((string)$this->request->getPost('username'));
         $email = trim((string)$this->request->getPost('email'));
         $rtId = (int)$this->request->getPost('rt_id');
-        $role = (int)$this->request->getPost('role');
+        $role = $this->request->getPost('role');
         $isActive = (int)$this->request->getPost('is_active') === 1 ? 1 : 0;
-        if ($username === '' || $rtId <= 0 || $role <= 0) {
+        if ($username === '' || $rtId <= 0 || $role === '') {
             return redirect()->back()->with('error', 'Username, RT, dan Role wajib diisi')->withInput();
         }
-        if (!in_array($role, [1, 2], true)) {
+        if (!in_array($role, ['desa/admin', 'rt', 'kecamatan', 'kabupaten'], true)) {
             return redirect()->back()->with('error', 'Role tidak valid')->withInput();
         }
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -179,11 +207,23 @@ class UsersController extends BaseController
     public function delete($id)
     {
         $__role = session('role');
-        $__isAdmin = ((int)($__role ?? 0) === 1) || (strtolower((string)($__role ?? '')) === 'admin');
+        $__isAdmin = in_array(strtolower((string)($__role ?? '')), ['admin', 'desa/admin']);
         if (!$__isAdmin) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(403)->setJSON(['status' => 'error', 'message' => 'Akses ditolak']);
+            }
             return redirect()->to('dashboard')->with('error', 'Akses ditolak');
         }
         $this->userModel->delete($id);
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'csrf' => [
+                    'token' => csrf_token(),
+                    'hash' => csrf_hash(),
+                ],
+            ]);
+        }
         return redirect()->to(base_url('users'))->with('success', 'User dihapus');
     }
 }

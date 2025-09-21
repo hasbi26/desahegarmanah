@@ -1,0 +1,159 @@
+CRITICAL - 2025-09-21 06:01:35 --> CodeIgniter\View\Exceptions\ViewException: Invalid file: "users/create.php"
+[Method: GET, Route: user/create]
+in SYSTEMPATH\Exceptions\FrameworkException.php on line 39.
+ 1 SYSTEMPATH\View\View.php(214): CodeIgniter\Exceptions\FrameworkException::forInvalidFile('users/create.php')
+ 2 SYSTEMPATH\Common.php(1167): CodeIgniter\View\View->render('users/create', [], true)
+ 3 APPPATH\Controllers\UserController.php(13): view('users/create')
+ 4 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\UserController->create()
+ 5 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\UserController))
+ 6 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 7 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 8 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 9 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+10 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+ERROR - 2025-09-21 07:01:06 --> mysqli_sql_exception: Table 'desa_hegarmanah.rumah_tangga' doesn't exist in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Database\MySQLi\Connection.php:327
+Stack trace:
+#0 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *\nFROM `...', 0)
+#1 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *\nFROM `...')
+#2 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *\nFROM `...')
+#3 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php(330): CodeIgniter\Database\BaseBuilder->get()
+#5 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\BaseModel.php(715): CodeIgniter\Model->doFirst()
+#6 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\app\Controllers\PendudukController.php(460): CodeIgniter\BaseModel->first()
+#7 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\CodeIgniter.php(933): App\Controllers\PendudukController->show('41')
+#8 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+#9 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Boot.php(363): CodeIgniter\CodeIgniter->run()
+#11 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+#12 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\public\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+#13 C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\rewrite.php(44): require_once('C:\\xampp1\\htdoc...')
+#14 {main}
+CRITICAL - 2025-09-21 07:01:06 --> CodeIgniter\Database\Exceptions\DatabaseException: Table 'desa_hegarmanah.rumah_tangga' doesn't exist
+[Method: GET, Route: penduduk/41]
+in SYSTEMPATH\Database\BaseConnection.php on line 684.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = :penduduk_id:
+ LIMIT 1', [...], false)
+ 2 SYSTEMPATH\Model.php(330): CodeIgniter\Database\BaseBuilder->get()
+ 3 SYSTEMPATH\BaseModel.php(715): CodeIgniter\Model->doFirst()
+ 4 APPPATH\Controllers\PendudukController.php(460): CodeIgniter\BaseModel->first()
+ 5 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->show('41')
+ 6 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 7 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 8 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 9 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+10 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+11 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:01:06 --> [Caused by] CodeIgniter\Database\Exceptions\DatabaseException: Table 'desa_hegarmanah.rumah_tangga' doesn't exist
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 332.
+ 1 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = \'41\'
+ LIMIT 1')
+ 2 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = \'41\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = :penduduk_id:
+ LIMIT 1', [...], false)
+ 4 SYSTEMPATH\Model.php(330): CodeIgniter\Database\BaseBuilder->get()
+ 5 SYSTEMPATH\BaseModel.php(715): CodeIgniter\Model->doFirst()
+ 6 APPPATH\Controllers\PendudukController.php(460): CodeIgniter\BaseModel->first()
+ 7 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->show('41')
+ 8 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 9 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+10 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+11 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+12 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+13 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:01:06 --> [Caused by] mysqli_sql_exception: Table 'desa_hegarmanah.rumah_tangga' doesn't exist
+in SYSTEMPATH\Database\MySQLi\Connection.php on line 327.
+ 1 SYSTEMPATH\Database\MySQLi\Connection.php(327): mysqli->query('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = \'41\'
+ LIMIT 1', 0)
+ 2 SYSTEMPATH\Database\BaseConnection.php(729): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = \'41\'
+ LIMIT 1')
+ 3 SYSTEMPATH\Database\BaseConnection.php(646): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = \'41\'
+ LIMIT 1')
+ 4 SYSTEMPATH\Database\BaseBuilder.php(1649): CodeIgniter\Database\BaseConnection->query('SELECT *
+FROM `rumah_tangga`
+WHERE `penduduk_id` = :penduduk_id:
+ LIMIT 1', [...], false)
+ 5 SYSTEMPATH\Model.php(330): CodeIgniter\Database\BaseBuilder->get()
+ 6 SYSTEMPATH\BaseModel.php(715): CodeIgniter\Model->doFirst()
+ 7 APPPATH\Controllers\PendudukController.php(460): CodeIgniter\BaseModel->first()
+ 8 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->show('41')
+ 9 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+10 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+11 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+12 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+13 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+14 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:01:12 --> TypeError: CodeIgniter\Database\BaseBuilder::like(): Argument #2 ($match) must be of type string, null given, called in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php on line 925
+[Method: GET, Route: penduduk/search]
+in SYSTEMPATH\Database\BaseBuilder.php on line 1008.
+ 1 SYSTEMPATH\Model.php(925): CodeIgniter\Database\BaseBuilder->like('nama', null)
+ 2 APPPATH\Controllers\PendudukController.php(596): CodeIgniter\Model->__call('like', [...])
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->search()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+ 9 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:01:13 --> TypeError: CodeIgniter\Database\BaseBuilder::like(): Argument #2 ($match) must be of type string, null given, called in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php on line 925
+[Method: GET, Route: penduduk/search]
+in SYSTEMPATH\Database\BaseBuilder.php on line 1008.
+ 1 SYSTEMPATH\Model.php(925): CodeIgniter\Database\BaseBuilder->like('nama', null)
+ 2 APPPATH\Controllers\PendudukController.php(596): CodeIgniter\Model->__call('like', [...])
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->search()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+ 9 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:03:53 --> TypeError: CodeIgniter\Database\BaseBuilder::like(): Argument #2 ($match) must be of type string, null given, called in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php on line 925
+[Method: GET, Route: penduduk/search]
+in SYSTEMPATH\Database\BaseBuilder.php on line 1008.
+ 1 SYSTEMPATH\Model.php(925): CodeIgniter\Database\BaseBuilder->like('nama', null)
+ 2 APPPATH\Controllers\PendudukController.php(596): CodeIgniter\Model->__call('like', [...])
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->search()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+ 9 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:03:57 --> TypeError: CodeIgniter\Database\BaseBuilder::like(): Argument #2 ($match) must be of type string, null given, called in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php on line 925
+[Method: GET, Route: penduduk/search]
+in SYSTEMPATH\Database\BaseBuilder.php on line 1008.
+ 1 SYSTEMPATH\Model.php(925): CodeIgniter\Database\BaseBuilder->like('nama', null)
+ 2 APPPATH\Controllers\PendudukController.php(596): CodeIgniter\Model->__call('like', [...])
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->search()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+ 9 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
+CRITICAL - 2025-09-21 07:03:59 --> TypeError: CodeIgniter\Database\BaseBuilder::like(): Argument #2 ($match) must be of type string, null given, called in C:\xampp1\htdocs\desahegarmanah\desa-hegarmanah\system\Model.php on line 925
+[Method: GET, Route: penduduk/search]
+in SYSTEMPATH\Database\BaseBuilder.php on line 1008.
+ 1 SYSTEMPATH\Model.php(925): CodeIgniter\Database\BaseBuilder->like('nama', null)
+ 2 APPPATH\Controllers\PendudukController.php(596): CodeIgniter\Model->__call('like', [...])
+ 3 SYSTEMPATH\CodeIgniter.php(933): App\Controllers\PendudukController->search()
+ 4 SYSTEMPATH\CodeIgniter.php(507): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\PendudukController))
+ 5 SYSTEMPATH\CodeIgniter.php(354): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 SYSTEMPATH\Boot.php(363): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Boot.php(68): CodeIgniter\Boot::runCodeIgniter(Object(CodeIgniter\CodeIgniter))
+ 8 FCPATH\index.php(59): CodeIgniter\Boot::bootWeb(Object(Config\Paths))
+ 9 SYSTEMPATH\rewrite.php(44): require_once('C:\\xampp1\\htdocs\\desahegarmanah\\desa-hegarmanah\\public\\index.php')
