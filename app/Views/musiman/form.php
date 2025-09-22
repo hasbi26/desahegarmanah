@@ -57,10 +57,12 @@
                     <?php if (session('role') == 1): ?>
                         <div class="col-md-4">
                             <label class="form-label">RT ID</label>
-                            <input name="rt_id" class="form-control" value="<?= esc($item['rt_id'] ?? old('rt_id')) ?>" required>
+                            <input name="rt_id" class="form-control" value="<?= esc($item['rt_id'] ?? old('rt_id')) ?>">
                         </div>
                     <?php else: ?>
-                        <input type="hidden" name="rt_id" value="<?= esc(session('rt_id')) ?>">
+                        <?php if (session('rt_id')): ?>
+                            <input type="hidden" name="rt_id" value="<?= esc(session('rt_id')) ?>">
+                        <?php endif; ?>
                     <?php endif; ?>
 
                     <div class="col-12">

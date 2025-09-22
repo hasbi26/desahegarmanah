@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\PendudukIntiModel;
 use App\Models\PendudukMutasiModel;
 use App\Models\PendudukTinggalModel;
-use App\Models\RumahTanggaModel;
+
 use App\Models\RTModel;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -14,7 +14,6 @@ class PendudukController extends BaseController
     protected $pendudukIntiModel;
     protected $pendudukMutasiModel;
     protected $pendudukTinggalModel;
-    protected $rumahTanggaModel;
     protected $rtModel;
     protected $session;
 
@@ -24,7 +23,6 @@ class PendudukController extends BaseController
         $this->pendudukIntiModel    = new PendudukIntiModel();
         $this->pendudukMutasiModel  = new PendudukMutasiModel();
         $this->pendudukTinggalModel = new PendudukTinggalModel();
-        $this->rumahTanggaModel     = new RumahTanggaModel();
         $this->rtModel              = new RTModel();
         $this->session              = \Config\Services::session();
     }
@@ -188,12 +186,12 @@ class PendudukController extends BaseController
                 // Jika sesi memiliki rt_id, pakai itu (abaikan input form)
                 $tinggal['rt_id'] = (int) $rtId;
             } else {
-                // Sesi kosong: izinkan pilih dari dropdown (RT01/RT10)
-                // Pastikan nilai dari form ada dan integer
-                if (empty($tinggal['rt_id']) || !is_numeric($tinggal['rt_id'])) {
-                    return redirect()->back()->withInput()->with('errors', ['rt_id' => 'Silakan pilih RT']);
+                // Sesi kosong: RT tidak wajib. Terima dari form bila valid, jika tidak biarkan null.
+                if (!empty($tinggal['rt_id']) && is_numeric($tinggal['rt_id'])) {
+                    $tinggal['rt_id'] = (int) $tinggal['rt_id'];
+                } else {
+                    $tinggal['rt_id'] = null;
                 }
-                $tinggal['rt_id'] = (int) $tinggal['rt_id'];
             }
         }
 
@@ -202,11 +200,21 @@ class PendudukController extends BaseController
             $mutasi[$f] = isset($mutasi[$f]) ? 1 : 0;
         }
 
+        // Sanitasi tanggal_lahir: kosongkan jika format tidak valid atau tahun < 1900
+        if (!empty($inti['tanggal_lahir'])) {
+            $tgl = (string) $inti['tanggal_lahir'];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tgl) || (int) substr($tgl, 0, 4) < 1900) {
+                $inti['tanggal_lahir'] = null;
+            }
+        }
+
         $rules = [
             'nama_lengkap' => 'required',
             'nik' => 'required|min_length[8]|is_unique[penduduk_new.nik]',
             'jenis_kelamin' => 'required',
-            'rt_id' => 'required|is_natural_no_zero'
+            // RT tidak wajib. Jika diisi, harus angka > 0
+            'rt_id' => 'permit_empty|is_natural_no_zero',
+            'tanggal_lahir' => 'permit_empty|valid_date[Y-m-d]'
         ];
 
         $validation = \Config\Services::validation();
@@ -217,12 +225,14 @@ class PendudukController extends BaseController
         }
 
 
-        // Sanitasi RT dan pastikan RT ada di tabel rts sebelum transaksi
+        // Sanitasi RT dan cek ke tabel rts hanya jika diisi
         $tinggal['rt_id'] = isset($tinggal['rt_id']) && is_numeric($tinggal['rt_id']) ? (int)$tinggal['rt_id'] : null;
         $db = \Config\Database::connect();
-        $rtOk = $tinggal['rt_id'] ? (bool) $db->table('rts')->where('id', $tinggal['rt_id'])->countAllResults() : false;
-        if (!$rtOk) {
-            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+        if (!empty($tinggal['rt_id'])) {
+            $rtOk = (bool) $db->table('rts')->where('id', $tinggal['rt_id'])->countAllResults();
+            if (!$rtOk) {
+                return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+            }
         }
 
         try {
@@ -233,8 +243,7 @@ class PendudukController extends BaseController
             $this->pendudukMutasiModel->insert($mutasi);
             $tinggal['penduduk_id'] = $pendudukId;
             $this->pendudukTinggalModel->insert($tinggal);
-            $rumah['penduduk_id'] = $pendudukId;
-            $this->rumahTanggaModel->insert($rumah);
+            // Skip insert into rumah_tangga (table may not exist in this deployment)
 
             $db->transComplete();
         } catch (\Throwable $e) {
@@ -358,15 +367,24 @@ class PendudukController extends BaseController
             if ($rtId) {
                 $tinggal['rt_id'] = (int)$rtId;
             } else {
-                // Sesi kosong: terima dari form
-                if (empty($tinggal['rt_id']) || !is_numeric($tinggal['rt_id'])) {
-                    return redirect()->back()->withInput()->with('errors', ['rt_id' => 'Silakan pilih RT']);
+                // Sesi kosong: RT tidak wajib pada update. Pakai dari form kalau valid
+                if (!empty($tinggal['rt_id']) && is_numeric($tinggal['rt_id'])) {
+                    $tinggal['rt_id'] = (int)$tinggal['rt_id'];
+                } else {
+                    $tinggal['rt_id'] = null;
                 }
-                $tinggal['rt_id'] = (int)$tinggal['rt_id'];
             }
         }
         foreach (['kelahiran', 'pendatang', 'kematian', 'pindah'] as $f) {
             $mutasi[$f] = isset($mutasi[$f]) ? 1 : 0;
+        }
+
+        // Sanitasi tanggal_lahir pada update: kosongkan jika format tidak valid atau tahun < 1900
+        if (!empty($inti['tanggal_lahir'])) {
+            $tgl = (string) $inti['tanggal_lahir'];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tgl) || (int) substr($tgl, 0, 4) < 1900) {
+                $inti['tanggal_lahir'] = null;
+            }
         }
 
         // Manual uniqueness check for NIK when updating: if NIK changed and already exists for another record, reject.
@@ -382,7 +400,9 @@ class PendudukController extends BaseController
             'nama_lengkap' => 'required',
             'nik' => 'required|min_length[8]',
             'jenis_kelamin' => 'required',
-            'rt_id' => 'required|is_natural_no_zero',
+            // RT tidak wajib saat update. Jika diisi, harus angka > 0
+            'rt_id' => 'permit_empty|is_natural_no_zero',
+            'tanggal_lahir' => 'permit_empty|valid_date[Y-m-d]'
         ];
         $validation = \Config\Services::validation();
         $validation->setRules($rules);
@@ -420,14 +440,7 @@ class PendudukController extends BaseController
                 $tinggal['penduduk_id'] = $id;
                 $this->pendudukTinggalModel->insert($tinggal);
             }
-            // upsert rumah
-            $existsRumah = $this->rumahTanggaModel->where('penduduk_id', $id)->first();
-            if ($existsRumah) {
-                $this->rumahTanggaModel->update($existsRumah['id'], $rumah);
-            } else {
-                $rumah['penduduk_id'] = $id;
-                $this->rumahTanggaModel->insert($rumah);
-            }
+            // Skip upsert rumah_tangga to avoid dependency on that table
 
             $db->transComplete();
             log_message('debug', 'Update penduduk berhasil untuk id=' . $id);

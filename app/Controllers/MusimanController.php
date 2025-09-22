@@ -113,9 +113,6 @@ class MusimanController extends BaseController
             }
         }
         $data['rt_id'] = ($role === 2) ? $this->session->get('rt_id') : (isset($data['rt_id']) ? (int) $data['rt_id'] : null);
-        if ($role === 2 && !$data['rt_id']) {
-            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak tersedia di sesi. Silakan login ulang atau pilih RT.']);
-        }
         // Normalisasi nilai numerik agar tidak menjadi 0 saat kosong
         // Jangan paksa cast yang bisa jadi 0; gunakan validasi aman
         if ($role === 2) {
@@ -128,7 +125,7 @@ class MusimanController extends BaseController
         $data['kategori'] = 'Musiman';
 
         $rules = [
-            'rt_id' => 'required|is_natural_no_zero',
+            'rt_id' => 'permit_empty|is_natural_no_zero',
             'penduduk_id' => 'permit_empty|is_natural_no_zero',
             'periode' => 'required',
         ];
@@ -139,9 +136,11 @@ class MusimanController extends BaseController
         // Verify foreign keys exist to avoid DB exception
         try {
             $db = db_connect();
-            // check rt exists
-            $rtOk = (bool) $db->table('rts')->where('id', $data['rt_id'])->countAllResults();
-            if (!$rtOk) return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+            // check rt exists only if provided
+            if (!empty($data['rt_id'])) {
+                $rtOk = (bool) $db->table('rts')->where('id', $data['rt_id'])->countAllResults();
+                if (!$rtOk) return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+            }
             // check penduduk exists if provided
             if (!empty($data['penduduk_id'])) {
                 $pendOk = (bool) $db->table('penduduk_new')->where('id', $data['penduduk_id'])->countAllResults();
@@ -152,13 +151,17 @@ class MusimanController extends BaseController
             return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal melakukan validasi data terkait. Coba lagi.']);
         }
 
-        // Final safety checks before insert: ensure rt_id is a positive int
+        // Final safety checks before insert: allow null rt_id; if provided must be a positive int
         log_message('debug', 'Musiman store payload pre-insert: ' . json_encode($data));
-        if (!isset($data['rt_id']) || !is_numeric($data['rt_id']) || (int)$data['rt_id'] <= 0) {
-            log_message('error', 'Musiman insert prevented: invalid rt_id: ' . var_export($data['rt_id'], true));
-            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid atau kosong.']);
+        if (isset($data['rt_id']) && $data['rt_id'] !== null && $data['rt_id'] !== '') {
+            if (!is_numeric($data['rt_id']) || (int)$data['rt_id'] <= 0) {
+                log_message('error', 'Musiman insert prevented: invalid rt_id: ' . var_export($data['rt_id'], true));
+                return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid']);
+            }
+            $data['rt_id'] = (int) $data['rt_id'];
+        } else {
+            $data['rt_id'] = null;
         }
-        $data['rt_id'] = (int) $data['rt_id'];
         if (!empty($data['penduduk_id']) && (!is_numeric($data['penduduk_id']) || (int)$data['penduduk_id'] <= 0)) {
             log_message('error', 'Musiman insert prevented: invalid penduduk_id: ' . var_export($data['penduduk_id'], true));
             return redirect()->back()->withInput()->with('errors', ['penduduk_id' => 'Penduduk ID tidak valid']);
@@ -253,14 +256,11 @@ class MusimanController extends BaseController
         } else {
             $data['rt_id'] = (isset($data['rt_id']) && is_numeric($data['rt_id']) && (int)$data['rt_id'] > 0) ? (int)$data['rt_id'] : null;
         }
-        if ($role === 2 && !$data['rt_id']) {
-            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak tersedia di sesi. Silakan login ulang atau pilih RT.']);
-        }
         // Normalisasi numerik agar tidak menjadi 0
         $data['penduduk_id'] = isset($data['penduduk_id']) && $data['penduduk_id'] !== '' ? (int)$data['penduduk_id'] : null;
 
         $rules = [
-            'rt_id' => 'required|is_natural_no_zero',
+            'rt_id' => 'permit_empty|is_natural_no_zero',
             'penduduk_id' => 'permit_empty|is_natural_no_zero',
             'periode' => 'required',
         ];
@@ -270,8 +270,10 @@ class MusimanController extends BaseController
         // Verify foreign keys exist before update
         try {
             $db = db_connect();
-            $rtOk = (bool) $db->table('rts')->where('id', $data['rt_id'])->countAllResults();
-            if (!$rtOk) return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+            if (!empty($data['rt_id'])) {
+                $rtOk = (bool) $db->table('rts')->where('id', $data['rt_id'])->countAllResults();
+                if (!$rtOk) return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid (tidak ditemukan)']);
+            }
             if (!empty($data['penduduk_id'])) {
                 $pendOk = (bool) $db->table('penduduk_new')->where('id', $data['penduduk_id'])->countAllResults();
                 if (!$pendOk) return redirect()->back()->withInput()->with('errors', ['penduduk_id' => 'Penduduk ID tidak valid (tidak ditemukan)']);
@@ -283,11 +285,15 @@ class MusimanController extends BaseController
 
         // Final safety checks before update
         log_message('debug', 'Musiman update payload pre-update (id=' . $id . '): ' . json_encode($data));
-        if (!isset($data['rt_id']) || !is_numeric($data['rt_id']) || (int)$data['rt_id'] <= 0) {
-            log_message('error', 'Musiman update prevented (id=' . $id . '): invalid rt_id: ' . var_export($data['rt_id'], true));
-            return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid atau kosong.']);
+        if (isset($data['rt_id']) && $data['rt_id'] !== null && $data['rt_id'] !== '') {
+            if (!is_numeric($data['rt_id']) || (int)$data['rt_id'] <= 0) {
+                log_message('error', 'Musiman update prevented (id=' . $id . '): invalid rt_id: ' . var_export($data['rt_id'], true));
+                return redirect()->back()->withInput()->with('errors', ['rt_id' => 'RT tidak valid']);
+            }
+            $data['rt_id'] = (int) $data['rt_id'];
+        } else {
+            $data['rt_id'] = null;
         }
-        $data['rt_id'] = (int) $data['rt_id'];
         if (!empty($data['penduduk_id']) && (!is_numeric($data['penduduk_id']) || (int)$data['penduduk_id'] <= 0)) {
             log_message('error', 'Musiman update prevented (id=' . $id . '): invalid penduduk_id: ' . var_export($data['penduduk_id'], true));
             return redirect()->back()->withInput()->with('errors', ['penduduk_id' => 'Penduduk ID tidak valid']);
