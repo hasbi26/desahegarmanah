@@ -3,16 +3,6 @@
 $role = $role ?? session('role');
 $wilayah_nama = $wilayah_nama ?? session('wilayah_nama');
 $username = $username ?? session('username');
-
-// Determine role label shown in the UI based on DB/session value
-$roleLabel = '';
-if (is_string($role) && $role !== '') {
-    // show exactly what is stored in DB (e.g., 'desa/admin', 'rt', 'kecamatan', 'kabupaten')
-    $roleLabel = $role;
-} else {
-    // fallback for numeric roles that might be set by older login flow
-    $roleLabel = ((int)($role ?? 0) === 1) ? 'admin' : 'pengelola rt';
-}
 ?>
 <main class="main-wrapper">
     <header class="header">
@@ -43,7 +33,35 @@ if (is_string($role) && $role !== '') {
                                         </div>
                                         <div>
                                             <h6 class="fw-500"><?= esc($username ?? '-') ?></h6>
-                                            <p><?= esc($roleLabel) ?></p>
+                                            <p><?php
+                                                // Determine role label: show RT/DESA/KECAMATAN/KABUPATEN, otherwise '-'
+                                                $label = '-';
+                                                $rawRole = $role ?? session('role');
+
+                                                if (is_numeric($rawRole)) {
+                                                    // Support numeric role codes
+                                                    switch ((int)$rawRole) {
+                                                        case 2: $label = 'RT'; break;
+                                                        case 3: $label = 'DESA'; break;
+                                                        case 4: $label = 'KECAMATAN'; break;
+                                                        case 5: $label = 'KABUPATEN'; break;
+                                                    }
+                                                } else {
+                                                    // Support string roles like 'rt', 'desa', 'kecamatan', 'kabupaten' or mixed (e.g., 'desa/admin')
+                                                    $val = strtolower((string)$rawRole);
+                                                    if (strpos($val, 'rt') !== false) {
+                                                        $label = 'RT';
+                                                    } elseif (strpos($val, 'desa') !== false) {
+                                                        $label = 'DESA';
+                                                    } elseif (strpos($val, 'kecamatan') !== false) {
+                                                        $label = 'KECAMATAN';
+                                                    } elseif (strpos($val, 'kabupaten') !== false) {
+                                                        $label = 'KABUPATEN';
+                                                    }
+                                                }
+
+                                                echo $label;
+                                            ?></p>
                                             <!-- Debug sementara -->
                                         </div>
                                     </div>
@@ -59,7 +77,7 @@ if (is_string($role) && $role !== '') {
                                             <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" href="#">
                                                 <?= esc($username ?? '-') ?>
                                             </a>
-                                            <p><?= esc($roleLabel) ?></p>
+                                            <h4 class="text-sm"><?= esc($role ?? '-') ?></h4>
                                         </div>
                                     </div>
                                 </li>

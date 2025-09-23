@@ -38,24 +38,24 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Nama Lengkap</label>
-                        <input name="nama_lengkap" class="form-control" value="<?= esc($item['nama_lengkap'] ?? old('nama_lengkap')) ?>" required>
+                        <input name="nama_lengkap" class="form-control" value="<?= esc(old('nama_lengkap', $item['nama_lengkap'] ?? '')) ?>" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">NIK</label>
-                        <input name="nik" class="form-control" value="<?= esc($item['nik'] ?? old('nik')) ?>" required>
+                        <input name="nik" class="form-control" value="<?= esc(old('nik', $item['nik'] ?? '')) ?>" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">No KK</label>
-                        <input name="no_kk" class="form-control" value="<?= esc($item['no_kk'] ?? old('no_kk')) ?>">
+                        <input name="no_kk" class="form-control" value="<?= esc(old('no_kk', $item['no_kk'] ?? '')) ?>">
                     </div>
 
                     <div class="col-md-3">
                         <label class="form-label">Tempat Lahir</label>
-                        <input name="tempat_lahir" class="form-control" value="<?= esc($item['tempat_lahir'] ?? old('tempat_lahir')) ?>">
+                        <input name="tempat_lahir" class="form-control" value="<?= esc(old('tempat_lahir', $item['tempat_lahir'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Tanggal Lahir</label>
-                        <input type="date" name="tanggal_lahir" class="form-control" value="<?= esc($item['tanggal_lahir'] ?? old('tanggal_lahir')) ?>">
+                        <input type="date" name="tanggal_lahir" class="form-control" value="<?= esc(old('tanggal_lahir', $item['tanggal_lahir'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Jenis Kelamin</label>
@@ -83,7 +83,7 @@
                             <input class="form-control" value="<?= esc($label) ?>" readonly>
                         <?php elseif (!empty($rtOptions)): ?>
                             <?php $selectedRtId = old('rt_id', $item['rt_id'] ?? session('rt_id')); ?>
-                            <select name="rt_id" class="form-select" required>
+                            <select name="rt_id" class="form-select">
                                 <option value="">- pilih -</option>
                                 <?php foreach ($rtOptions as $rt): ?>
                                     <?php
@@ -96,7 +96,7 @@
                                         $rwLabel  = $rwDigits !== '' ? ('/RW' . str_pad($rwDigits, 2, '0', STR_PAD_LEFT)) : '';
                                         $label    = $rtLabel . $rwLabel;
                                     ?>
-                                    <option value="<?= $rt['id'] ?>" <?= ($selectedRtId == $rt['id']) ? 'selected' : '' ?>><?= esc($label) ?></option>
+                                    <option value="<?= $rt['id'] ?>" <?= ((string)$selectedRtId === (string)$rt['id']) ? 'selected' : '' ?>><?= esc($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         <?php else: ?>
@@ -106,74 +106,84 @@
 
                     <div class="col-md-3">
                         <label class="form-label">Pendidikan</label>
-                        <input name="pendidikan" class="form-control" value="<?= esc($item['pendidikan'] ?? old('pendidikan')) ?>">
+                        <input name="pendidikan" class="form-control" value="<?= esc(old('pendidikan', $item['pendidikan'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Status Perkawinan</label>
-                        <input name="status_perkawinan" class="form-control" value="<?= esc($item['status_perkawinan'] ?? old('status_perkawinan')) ?>">
+                        <input name="status_perkawinan" class="form-control" value="<?= esc(old('status_perkawinan', $item['status_perkawinan'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Agama</label>
-                        <input name="agama" class="form-control" value="<?= esc($item['agama'] ?? old('agama')) ?>">
+                        <input name="agama" class="form-control" value="<?= esc(old('agama', $item['agama'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Pekerjaan</label>
-                        <input name="pekerjaan" class="form-control" value="<?= esc($item['pekerjaan'] ?? old('pekerjaan')) ?>">
+                        <input name="pekerjaan" class="form-control" value="<?= esc(old('pekerjaan', $item['pekerjaan'] ?? '')) ?>">
                     </div>
 
                     <div class="col-12">
                         <label class="form-label">Alamat</label>
-                        <textarea name="alamat" class="form-control" rows="2"><?= esc($item['alamat'] ?? old('alamat')) ?></textarea>
+                        <textarea name="alamat" class="form-control" rows="2"><?= esc(old('alamat', $item['alamat'] ?? '')) ?></textarea>
                     </div>
 
                     <div class="col-md-12">
                         <label class="form-label d-block">Status Dinamis</label>
+                        <?php
+                            // Preserve checkbox state from old input first, then item (edit mode)
+                            $isOld = (bool) session('errors');
+                            $checked = function(string $name) use ($isOld, $item) {
+                                if ($isOld) {
+                                    return old($name) !== null; // if present in old input, it was checked
+                                }
+                                return !empty($item[$name] ?? null);
+                            };
+                        ?>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="kelahiran" <?= !empty($item['kelahiran']) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="kelahiran" <?= $checked('kelahiran') ? 'checked' : '' ?>>
                             <label class="form-check-label">Kelahiran</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="pendatang" <?= !empty($item['pendatang']) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="pendatang" <?= $checked('pendatang') ? 'checked' : '' ?>>
                             <label class="form-check-label">Pendatang</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="kematian" <?= !empty($item['kematian']) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="kematian" <?= $checked('kematian') ? 'checked' : '' ?>>
                             <label class="form-check-label">Kematian</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="pindah" <?= !empty($item['pindah']) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="pindah" <?= $checked('pindah') ? 'checked' : '' ?>>
                             <label class="form-check-label">Pindah</label>
                         </div>
                     </div>
 
                     <div class="col-md-3">
                         <label class="form-label">Status Rumah</label>
-                        <input name="status_rumah" class="form-control" value="<?= esc($item['status_rumah'] ?? old('status_rumah')) ?>">
+                        <input name="status_rumah" class="form-control" value="<?= esc(old('status_rumah', $item['status_rumah'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Luas Tanah (m2)</label>
-                        <input name="luas_tanah" class="form-control" type="number" step="0.01" value="<?= esc($item['luas_tanah'] ?? old('luas_tanah')) ?>">
+                        <input name="luas_tanah" class="form-control" type="number" step="0.01" value="<?= esc(old('luas_tanah', $item['luas_tanah'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Luas Bangunan (m2)</label>
-                        <input name="luas_bangunan" class="form-control" type="number" step="0.01" value="<?= esc($item['luas_bangunan'] ?? old('luas_bangunan')) ?>">
+                        <input name="luas_bangunan" class="form-control" type="number" step="0.01" value="<?= esc(old('luas_bangunan', $item['luas_bangunan'] ?? '')) ?>">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Air</label>
-                        <input name="air" class="form-control" value="<?= esc($item['air'] ?? old('air')) ?>">
+                        <input name="air" class="form-control" value="<?= esc(old('air', $item['air'] ?? '')) ?>">
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Listrik</label>
-                        <input name="listrik" class="form-control" value="<?= esc($item['listrik'] ?? old('listrik')) ?>">
+                        <input name="listrik" class="form-control" value="<?= esc(old('listrik', $item['listrik'] ?? '')) ?>">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Sampah</label>
-                        <input name="sampah" class="form-control" value="<?= esc($item['sampah'] ?? old('sampah')) ?>">
+                        <input name="sampah" class="form-control" value="<?= esc(old('sampah', $item['sampah'] ?? '')) ?>">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Limbah</label>
-                        <input name="limbah" class="form-control" value="<?= esc($item['limbah'] ?? old('limbah')) ?>">
+                        <input name="limbah" class="form-control" value="<?= esc(old('limbah', $item['limbah'] ?? '')) ?>">
                     </div>
                 </div>
                 <div class="mt-3">
