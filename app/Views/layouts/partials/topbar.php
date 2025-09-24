@@ -11,7 +11,8 @@ $username = $username ?? session('username');
                 <div class="col-lg-5 col-md-5 col-6">
                     <div class="header-left d-flex align-items-center">
                         <div class="menu-toggle-btn mr-15">
-                            <button id="menu-toggle" class="main-btn btn-hover" style="background: #1DA5B4; color: #fff;">
+                            <button id="menu-toggle" class="main-btn btn-hover"
+                                style="background: #1DA5B4; color: #fff;">
                                 <i class="lni lni-chevron-left me-2"></i> Menu
                             </button>
                         </div>
@@ -45,6 +46,7 @@ $username = $username ?? session('username');
                                                         case 3: $label = 'DESA'; break;
                                                         case 4: $label = 'KECAMATAN'; break;
                                                         case 5: $label = 'KABUPATEN'; break;
+                                                        default: $label = 'Admin'; break;
                                                     }
                                                 } else {
                                                     // Support string roles like 'rt', 'desa', 'kecamatan', 'kabupaten' or mixed (e.g., 'desa/admin')
@@ -57,6 +59,8 @@ $username = $username ?? session('username');
                                                         $label = 'KECAMATAN';
                                                     } elseif (strpos($val, 'kabupaten') !== false) {
                                                         $label = 'KABUPATEN';
+                                                    } elseif (strpos($val, 'admin') !== false) {
+                                                        $label = 'Admin';
                                                     }
                                                 }
 
@@ -74,7 +78,8 @@ $username = $username ?? session('username');
                                             <img src="<?= base_url('/img/logo.png') ?>" alt="image">
                                         </div>
                                         <div class="content">
-                                            <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" href="#">
+                                            <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs"
+                                                href="#">
                                                 <?= esc($username ?? '-') ?>
                                             </a>
                                             <h4 class="text-sm"><?= esc($role ?? '-') ?></h4>
